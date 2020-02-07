@@ -926,7 +926,7 @@ static int zsync_receive_data_compressed(struct zsync_receiver *zr,
         return 0;
 
     /* Now set up for the downloaded block */
-    zr->strm.next_in = buf;
+    zr->strm.next_in = (unsigned char *) buf;
     zr->strm.avail_in = len;
 
     if (zr->strm.total_in == 0 || offset != zr->strm.total_in) {
@@ -943,7 +943,7 @@ static int zsync_receive_data_compressed(struct zsync_receiver *zr,
                     "data didn't align with block boundary in compressed stream\n");
             return 1;
         }
-        zr->strm.next_in = buf;
+        zr->strm.next_in = (unsigned char *) buf;
         zr->strm.avail_in = len;
     }
 

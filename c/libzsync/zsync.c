@@ -116,7 +116,7 @@ struct zsync_state {
 };
 
 static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
-                                int rsum_bytes, int checksum_bytes,
+                                int rsum_bytes, unsigned int checksum_bytes,
                                 int seq_matches);
 static int zsync_sha1(struct zsync_state *zs, int fh);
 static int zsync_recompress(struct zsync_state *zs);
@@ -442,12 +442,12 @@ const char *const *zsync_get_urls(struct zsync_state *zs, int *n, int *t) {
     if (zs->zmap && zs->nzurl) {
         *n = zs->nzurl;
         *t = 1;
-        return zs->zurl;
+        return (const char * const *) zs->zurl;
     }
     else {
         *n = zs->nurl;
         *t = 0;
-        return zs->url;
+        return (const char * const *) zs->url;
     }
 }
 

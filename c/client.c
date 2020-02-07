@@ -502,7 +502,7 @@ int main(int argc, char **argv) {
                 filename = strdup(optarg);
                 break;
             case 'i':
-                seedfiles = append_ptrlist(&nseedfiles, seedfiles, optarg);
+                seedfiles = (char **) append_ptrlist(&nseedfiles, (void **) seedfiles, optarg);
                 break;
             case 'V':
                 printf(PACKAGE " v" VERSION " (compiled " __DATE__ " " __TIME__
@@ -560,7 +560,7 @@ int main(int argc, char **argv) {
         /* If the target file already exists, we're probably updating that file
          * - so it's a seed file */
         if (!access(filename, R_OK)) {
-            seedfiles = append_ptrlist(&nseedfiles, seedfiles, filename);
+            seedfiles = (char **) append_ptrlist(&nseedfiles, (void **) seedfiles, filename);
         }
         /* If the .part file exists, it's probably an interrupted earlier
          * effort; a normal HTTP client would 'resume' from where it got to,
@@ -568,7 +568,7 @@ int main(int argc, char **argv) {
          * current version on the remote) and doesn't need to, because we can
          * treat it like any other local source of data. Use it now. */
         if (!access(temp_file, R_OK)) {
-            seedfiles = append_ptrlist(&nseedfiles, seedfiles, temp_file);
+            seedfiles = (char **) append_ptrlist(&nseedfiles, (void **) seedfiles, temp_file);
         }
 
         /* Try any seed files supplied by the command line */

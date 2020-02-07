@@ -43,7 +43,7 @@ char *get_http_host_port(const char *url, char *hostn, int hnlen, char **port) {
     if (memcmp(url, http_scheme, strlen(http_scheme)))
         return NULL;
 
-    q = url + strlen(http_scheme);
+    q = (char *) url + strlen(http_scheme);
 
     p = strchr(q, ':');
     if (p) {                    /* if : is after the first /, we have looked too far ahead */

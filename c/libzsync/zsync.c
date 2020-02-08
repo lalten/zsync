@@ -364,7 +364,7 @@ static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
  * E.g. Tue, 25 Jul 2006 20:02:17 +0000
  */
 static time_t parse_822(const char* ts) {
-    struct tm t;
+    struct tm t = { 0 };
 
     if (strptime(ts, "%a, %d %b %Y %H:%M:%S %z", &t) == NULL
         && strptime(ts, "%d %b %Y %H:%M:%S %z", &t) == NULL) {

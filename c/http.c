@@ -442,7 +442,7 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
 
         {   /* Now the actual content. Show progress as we go. */
             size_t got = 0;
-            struct progress *p;
+            struct progress *p = { 0 };
             size_t r;
 
             if (!no_progress) {

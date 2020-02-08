@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -86,7 +86,7 @@ int connect_to(const char *node, const char *service) {
  * Converts a socket into a stream, and reads the first line from it as an HTTP
  * status line (response to a request that the caller should have already sent)
  * and returns the stream, and the status code to the location specified by the
- * second parameter. 
+ * second parameter.
  */
 FILE *http_get_stream(int fd, int *code) {
     FILE *f = fdopen(fd, "r");
@@ -109,7 +109,7 @@ FILE *http_get_stream(int fd, int *code) {
  * Reads the HTTP response from the given stream and extracts the Location
  * header, making this URL absolute using the current URL. Returned as a
  * malloced string.
- * (it ought to be absolute anyway, by the RFC, but many servers send 
+ * (it ought to be absolute anyway, by the RFC, but many servers send
  * relative URIs). */
 char *get_location_url(FILE * f, const char *cur_url) {
     char buf[1024];
@@ -493,8 +493,8 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
 
 /****************************************************************************
  *
- * HTTP Range: / 206 response interface 
- * 
+ * HTTP Range: / 206 response interface
+ *
  * The state engine here is:
  * If sd == -1, not connected;
  * else, if block_left is 0
@@ -540,7 +540,7 @@ struct range_fetch {
 /* range_fetch methods */
 
 /* range_fetch_set_url(rf, url)
- * Set up a range_fetch to fetch from a given URL. Private method. 
+ * Set up a range_fetch to fetch from a given URL. Private method.
  * C is a nightmare for memory allocation here. At least the errors should be
  * caught, but minor memory leaks may occur on some error paths. */
 static int range_fetch_set_url(struct range_fetch* rf, const char* orig_url) {
@@ -587,8 +587,8 @@ static int range_fetch_set_url(struct range_fetch* rf, const char* orig_url) {
 
 /* get_more_data - this is the method which owns all reads from the remote.
  * Nothing else reads from the remote. This buffers data, so that the
- * higher-level methods below can easily read whole lines from the remote. 
- * The higher-level methods call this function when they need more data: 
+ * higher-level methods below can easily read whole lines from the remote.
+ * The higher-level methods call this function when they need more data:
  * it refills the buffer with data from the network. Returns the bytes read. */
 static int get_more_data(struct range_fetch *rf) {
     /* First, garbage collect - move the 'live' data in the buffer to the start
@@ -763,7 +763,7 @@ static void range_fetch_getmore(struct range_fetch *rf) {
         int i = rf->rangessent;
         int lastrange = 0;
 
-        /* Add at least one byterange to the request; but is this the last one? 
+        /* Add at least one byterange to the request; but is this the last one?
          * That's decided based on whether there are any more to add, whether
          * we've reached our self-imposed limit per request, and whether
          * there's buffer space to add more.
@@ -949,7 +949,7 @@ int range_fetch_read_http_headers(struct range_fetch *rf) {
                 break;
             }
 
-            /* Set new target URL 
+            /* Set new target URL
              * NOTE: we are violating the "the client SHOULD continue to use
              * the Request-URI for future requests" of RFC2616 10.3.3 for 302s.
              * It's not practical given the number of requests we are making to

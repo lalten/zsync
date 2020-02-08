@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -280,7 +280,7 @@ static float calc_zsync_progress(const struct zsync_state *zs) {
  * For the given zsync_state, using the given absolute HTTP URL (which is a
  * copy of the actual content of the target file is type == 0, or a compressed
  * copy of it if type == 1), retrieve the parts of the target that are
- * currently missing. 
+ * currently missing.
  * Returns 0 if this URL was useful, non-zero if we crashed and burned.
  */
 #define BUFFERSIZE 8192
@@ -353,7 +353,7 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u,
                             range_fetch_bytes_down(rf));
 
             // Needed in case next call returns len=0 and we need to signal where the EOF was.
-            zoffset += len;     
+            zoffset += len;
         }
 
         /* If error, we need to flag that to our caller */
@@ -379,7 +379,7 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u,
 /* fetch_remaining_blocks_from_url(struct zsync_state*, url, type)
  * For the given zsync_state, using the given URL (which is a copy of the
  * actual content of the target file is type == 0, or a compressed copy of it
- * if type == 1), retrieve the parts of the target that are currently missing. 
+ * if type == 1), retrieve the parts of the target that are currently missing.
  * Returns true if this URL was useful, false if we crashed and burned.
  */
 int fetch_remaining_blocks_from_url(struct zsync_state *zs, const char *url,
@@ -403,7 +403,7 @@ int fetch_remaining_blocks_from_url(struct zsync_state *zs, const char *url,
 
 /* int fetch_remaining_blocks(struct zsync_state*)
  * Using the URLs in the supplied zsync state, downloads data to complete the
- * target file. 
+ * target file.
  * Returns 0 if there were no URLs to download from, 1 if there were (in which
  * case consult zsync_status to see how far it got).
  */
@@ -446,7 +446,7 @@ static int set_mtime(char* filename, time_t mtime) {
         perror("stat");
         return -1;
     }
-    
+
     /* Set the modification time. */
     u.actime = s.st_atime;
     u.modtime = mtime;
@@ -673,7 +673,7 @@ int main(int argc, char **argv) {
              * the link below will catch any failure */
             unlink(oldfile_backup);
 
-            /* Try linking the filename to the backup file name, so we will 
+            /* Try linking the filename to the backup file name, so we will
                atomically replace the target file in the next step.
                If that fails due to EPERM, it is probably a filesystem that
                doesn't support hard-links - so try just renaming it to the

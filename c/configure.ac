@@ -63,7 +63,7 @@ case $host_os in
 esac
 AM_CONDITIONAL([MINGW32], test "x$host_os_mingw32" = "xyes")
 
-X_C_COMPILE_FLAGS($ZS_CFLAGS -g -Wall -Wwrite-strings -Winline -Wextra -Winline -Wmissing-noreturn -Wredundant-decls -Wnested-externs -Wundef -Wbad-function-cast -Wcast-align -Wvolatile-register-var -ffast-math)
+X_C_COMPILE_FLAGS($ZS_CFLAGS -g -Wall -Wwrite-strings -Winline -Wextra -Wmissing-noreturn -Wredundant-decls -Wnested-externs -Wundef -Wbad-function-cast -Wcast-align -Wvolatile-register-var -Wno-implicit-fallthrough -ffast-math)
 
 dnl --- output
 AC_SUBST(ac_aux_dir)

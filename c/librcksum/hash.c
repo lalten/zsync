@@ -5,8 +5,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -30,6 +30,12 @@
 
 #include "rcksum.h"
 #include "internal.h"
+
+#ifdef DEBUG
+#	define UNUSED_BY_NDEBUG
+#else
+#	define UNUSED_BY_NDEBUG __attribute__((unused))
+#endif
 
 /* rcksum_add_target_block(self, blockid, rsum, checksum)
  * Sets the stored hash values for the given blockid to the given values.
@@ -55,7 +61,7 @@ void rcksum_add_target_block(struct rcksum_state *z, zs_blockid b,
     }
 }
 
-static void print_hashstats(const struct rcksum_state* z) {
+static void print_hashstats(const struct rcksum_state* z UNUSED_BY_NDEBUG) {
 #ifdef DEBUG
     int i;
     {
@@ -65,7 +71,7 @@ static void print_hashstats(const struct rcksum_state* z) {
             for (c = z->bithash[i]; c; c &= c - 1)
                 num_bits_set++;
         }
-            
+
         fprintf(stderr, "bithash %dKB, density %.1f%%\n",
                 (z->bithashmask+1)/(1000 * 8),
                 100.0 * num_bits_set / (z->bithashmask + 1));
@@ -197,7 +203,7 @@ int build_hash(struct rcksum_state *z) {
 }
 
 static void sprint_checksum(char* buf, const struct hash_entry* t) {
-        sprintf(buf, "%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x", 
+        sprintf(buf, "%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x",
                 t->checksum[0], t->checksum[1],
                 t->checksum[2], t->checksum[3],
                 t->checksum[4], t->checksum[5],

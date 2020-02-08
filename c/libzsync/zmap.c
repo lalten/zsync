@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -281,7 +281,7 @@ off_t *zmap_to_compressed_ranges(const struct zmap *zm, off_t * byterange,
         }
     }
 
-    /* Return the # of ranges and the array of byte ranges we have built 
+    /* Return the # of ranges and the array of byte ranges we have built
      * after consolidating ranges where possible */
     *num = k;
     return consolidate_byteranges(zbyterange, num);
@@ -320,7 +320,7 @@ int zmap_search(const struct zmap* zm, long zoffset) {
  * Given an zoffset and a zmap, configure the supplied zstream to be in the
  * correct state to interpret the compressed data stream read from the
  * compressed file at this offset. And return the offset in the uncompressed
- * stream that this corresponds to in the supplied long long* .
+ * stream that this corresponds to in the supplied off_t* .
  * NOTE: the caller must call zlib:updatewindow() on the zstream to supply it
  * with 32k of leading context in the uncompressed stream, before the zstream
  * can be used to actually decompress.
@@ -333,7 +333,7 @@ int zmap_search(const struct zmap* zm, long zoffset) {
  * and in the order that it returned them, this condition is satisfied.
  */
 void configure_zstream_for_zdata(const struct zmap *zm, z_stream * zs,
-                                 long zoffset, long long *poutoffset) {
+                                 long zoffset, off_t *poutoffset) {
     /* Find the zmap entry corresponding to this offset */
     int i = zmap_search(zm, zoffset);
 

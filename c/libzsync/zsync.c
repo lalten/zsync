@@ -242,7 +242,7 @@ struct zsync_state *zsync_begin(FILE * f) {
 
                 zblock = malloc(nzblocks * sizeof *zblock);
                 if (zblock) {
-                    if (fread(zblock, sizeof *zblock, nzblocks, f) < nzblocks) {
+                    if (fread(zblock, sizeof *zblock, nzblocks, f) < (size_t) nzblocks) {
                         fprintf(stderr, "premature EOF after Z-Map\n");
                         free(zs);
                         return NULL;
@@ -703,7 +703,7 @@ static int zsync_recompress(struct zsync_state *zs) {
                     p = skip_zhead(buf);
                     skip = 0;
                 }
-								int bytes_to_write = r - (p - buf);
+                size_t bytes_to_write = r - (p - buf);
                 if (fwrite(p, 1, bytes_to_write, zout) != bytes_to_write) {
                     perror("fwrite");
                     rc = -1;
@@ -929,7 +929,7 @@ static int zsync_receive_data_compressed(struct zsync_receiver *zr,
     zr->strm.next_in = (unsigned char *) buf;
     zr->strm.avail_in = len;
 
-    if (zr->strm.total_in == 0 || offset != zr->strm.total_in) {
+    if (zr->strm.total_in == 0 || (uLong) offset != zr->strm.total_in) {
         zsync_configure_zstream_for_zdata(zr->zs, &(zr->strm), offset,
                                           &(zr->outoffset));
 

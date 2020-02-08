@@ -520,7 +520,8 @@ int zsync_submit_source_file(struct zsync_state *zs, FILE * f, int progress) {
 
 static char *zsync_cur_filename(struct zsync_state *zs) {
     if (!zs->cur_filename)
-        zs->cur_filename = rcksum_filename(zs->rs);
+        if (zs->rs)
+            zs->cur_filename = rcksum_filename(zs->rs);
 
     return zs->cur_filename;
 }

@@ -382,9 +382,11 @@ int zsync_hint_decompress(const struct zsync_state *zs) {
 
 /* zsync_blocksize(self)
  * Returns the blocksize used by zsync on this target. */
+/*
 static size_t zsync_blocksize(const struct zsync_state *zs) {
     return zs->blocksize;
 }
+*/
 
 /* char* = zsync_filename(self)
  * Returns the suggested filename to be used for the final result of this

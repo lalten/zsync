@@ -145,7 +145,7 @@ int build_hash(struct rcksum_state *z) {
     int hash_bits = avail_bits;
 
     /* Pick a hash size that is a power of two and gives a load factor of <1 */
-    while ((int) (1U << (hash_bits - 1)) > z->blocks && hash_bits > 5)
+    while (((1U << (hash_bits-1)) > (unsigned int) z->blocks) && hash_bits > 5)
         hash_bits--;
 
     /* Allocate hash based on rsum */

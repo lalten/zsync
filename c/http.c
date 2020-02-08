@@ -284,7 +284,7 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
             if (http_date_string(st.st_mtime, buf, sizeof(buf)) != NULL)
                 snprintf(ifrange, sizeof(ifrange),
                          "If-Unmodified-Since: %s\r\nRange: bytes=" OFF_T_PF
-                         "-\r\n", buf, st.st_size);
+                         "-\r\n", buf, (intmax_t) st.st_size);
         }
         else if (errno == ENOENT && stat(tfname, &st) == 0) {
             /* Else, if we have a complete possibly-old version, so only transfer
@@ -774,7 +774,7 @@ static void range_fetch_getmore(struct range_fetch *rf) {
 
         /* Append to the request */
         snprintf(request + l, sizeof(request) - l, OFF_T_PF "-" OFF_T_PF "%s",
-                 rf->ranges_todo[2 * i], rf->ranges_todo[2 * i + 1],
+                 (intmax_t) rf->ranges_todo[2 * i], (intmax_t) rf->ranges_todo[2 * i + 1],
                  lastrange ? "" : ",");
 
         /* And record that we have sent this one */
@@ -904,7 +904,7 @@ int range_fetch_read_http_headers(struct range_fetch *rf) {
             /* Okay, we're getting a non-MIME block from the remote. Get the
              * range and set our state appropriately */
             off_t from, to;
-            sscanf(p, "bytes " OFF_T_PF "-" OFF_T_PF "/", &from, &to);
+            sscanf(p, "bytes " OFF_T_PF "-" OFF_T_PF "/", (intmax_t *) &from, (intmax_t *) &to);
             if (from <= to) {
                 rf->block_left = to + 1 - from;
                 rf->offset = from;
@@ -1091,7 +1091,7 @@ int get_range_block(struct range_fetch *rf, off_t * offset, unsigned char *data,
                 if (2 ==
                     sscanf(buf,
                            "content-range: bytes " OFF_T_PF "-" OFF_T_PF "/",
-                           &from, &to)) {
+                           (intmax_t* ) &from, (intmax_t *) &to)) {
                     rf->offset = from;
                     rf->block_left = to - from + 1;
                     gotr = 1;

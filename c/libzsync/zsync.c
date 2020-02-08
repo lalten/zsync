@@ -212,7 +212,7 @@ struct zsync_state *zsync_begin(FILE * f) {
             else if (!strcmp(buf, "Blocksize")) {
                 long blocksize = atol(p);
                 if (zs->blocksize & (zs->blocksize - 1)) {
-                    fprintf(stderr, "nonsensical blocksize %ld\n", zs->blocksize);
+                    fprintf(stderr, "nonsensical blocksize %zu\n", zs->blocksize);
                     free(zs);
                     return NULL;
                 }
@@ -625,7 +625,7 @@ static int zsync_sha1(struct zsync_state *zs, int fh) {
         SHA1Final(digest, &shactx);
 
         for (i = 0; i < SHA1_DIGEST_LENGTH; i++) {
-            int j;
+            unsigned int j;
             sscanf(&(zs->checksum[2 * i]), "%2x", &j);
             if (j != digest[i]) {
                 return -1;

@@ -3,8 +3,8 @@
  *   Copyright (C) 2004,2005,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -749,14 +749,14 @@ int main(int argc, char **argv) {
      * Where we were given a compressed file (not an uncompressed file that we
      * then compressed), but we nonetheless looked inside and made a .zsync for
      * the uncompressed data, the user may want to actually have the client
-     * have the compressed version once the whole operation is done. 
+     * have the compressed version once the whole operation is done.
      * If so, if possible we want the compressed version that the client gets
      * to exactly match the original; but as the client will have to compress
      * it after completion of zsyncing, it might not be possible to achieve
      * that.
      * So a load of code here to work out whether (the client should)
      * recompress, what options it should use to do so, and to inform the
-     * creator of the zsync if we don't think the recompression will work. 
+     * creator of the zsync if we don't think the recompression will work.
      */
 
     /* The only danger of the client not getting the original file is if we have compressed;
@@ -849,7 +849,7 @@ int main(int argc, char **argv) {
         }
     }
     fprintf(fout, "Blocksize: " SIZE_T_PF "\n", blocksize);
-    fprintf(fout, "Length: " OFF_T_PF "\n", len);
+    fprintf(fout, "Length: " OFF_T_PF "\n", (intmax_t) len);
     fprintf(fout, "Hash-Lengths: %d,%d,%d\n", seq_matches, rsum_len,
             checksum_len);
     {                           /* Write URLs */

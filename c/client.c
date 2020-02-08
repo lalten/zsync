@@ -330,7 +330,7 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u,
     {
         int len;
         off_t zoffset;
-        struct progress *p;
+        struct progress *p = { 0 };
 
         /* Set up progress display to run during the fetch */
         if (!no_progress) {

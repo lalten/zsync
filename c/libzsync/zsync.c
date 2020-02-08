@@ -211,7 +211,7 @@ struct zsync_state *zsync_begin(FILE * f) {
             }
             else if (!strcmp(buf, "Blocksize")) {
                 long blocksize = atol(p);
-                if (zs->blocksize < 0 || (zs->blocksize & (zs->blocksize - 1))) {
+                if (zs->blocksize & (zs->blocksize - 1)) {
                     fprintf(stderr, "nonsensical blocksize %ld\n", zs->blocksize);
                     free(zs);
                     return NULL;

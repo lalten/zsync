@@ -545,7 +545,7 @@ struct range_fetch {
  * caught, but minor memory leaks may occur on some error paths. */
 static int range_fetch_set_url(struct range_fetch* rf, const char* orig_url) {
     /* Get the host, port and path from the URL. */
-    char hostn[sizeof(rf->hosth)];
+    char hostn[sizeof(rf->hosth) - 6];
     char* cport;
     char* p = get_http_host_port(orig_url, hostn, sizeof(hostn), &cport);
     if (!p) {

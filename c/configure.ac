@@ -57,8 +57,8 @@ case $host_os in
        LIBS="${LIBS} -lwsock32"
        ;;
    *)
-       AC_DEFINE([_XOPEN_SOURCE], 600, [Enable POSIX extensions if present])
-       AC_DEFINE([_BSD_SOURCE],1, [Enable BSD extensions if present])
+       AC_DEFINE([_XOPEN_SOURCE], 700, [Enable POSIX extensions if present])
+       AC_DEFINE([_DEFAULT_SOURCE],1, [Enable BSD extensions if present])
        ;;
 esac
 AM_CONDITIONAL([MINGW32], test "x$host_os_mingw32" = "xyes")

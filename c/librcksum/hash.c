@@ -145,7 +145,7 @@ int build_hash(struct rcksum_state *z) {
     int hash_bits = avail_bits;
 
     /* Pick a hash size that is a power of two and gives a load factor of <1 */
-    while ((1U << (hash_bits-1)) > z->blocks && hash_bits > 5)
+    while ((int) (1U << (hash_bits - 1)) > z->blocks && hash_bits > 5)
         hash_bits--;
 
     /* Allocate hash based on rsum */
@@ -202,6 +202,7 @@ int build_hash(struct rcksum_state *z) {
     return 1;
 }
 
+/*
 static void sprint_checksum(char* buf, const struct hash_entry* t) {
         sprintf(buf, "%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x",
                 t->checksum[0], t->checksum[1],
@@ -213,6 +214,7 @@ static void sprint_checksum(char* buf, const struct hash_entry* t) {
                 t->checksum[12], t->checksum[13],
                 t->checksum[14], t->checksum[15]);
 }
+*/
 
 /* remove_block_from_hash(self, block_id)
  * Remove the given data block from the rsum hash table, so it won't be

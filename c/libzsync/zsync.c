@@ -48,7 +48,7 @@
 # include <dmalloc.h>
 #endif
 
-#include "zlib/zlib.h"
+#include <zlib.h>
 
 #include "librcksum/rcksum.h"
 #include "zsync.h"

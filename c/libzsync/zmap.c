@@ -287,7 +287,7 @@ off_t *zmap_to_compressed_ranges(const struct zmap *zm, off_t * byterange,
     return consolidate_byteranges(zbyterange, num);
 }
 
-#include "zlib/zlib.h"
+#include <zlib.h>
 /* zmap_search(self, offset)
  * Find this offset in the Z-Map */
 int zmap_search(const struct zmap* zm, long zoffset) {

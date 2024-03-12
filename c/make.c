@@ -43,7 +43,7 @@
 #include "librcksum/rcksum.h"
 #include "libzsync/zmap.h"
 #include "libzsync/sha1.h"
-#include "zlib/zlib.h"
+#include <zlib.h>
 #include "format_string.h"
 
 /* We're only doing one file per run, so these are global state for the current

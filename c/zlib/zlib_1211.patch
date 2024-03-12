@@ -1,0 +1,232 @@
+diff --git a/deflate.c b/deflate.c
+index ada7cfd..19a8f27 100644
+--- a/deflate.c
++++ b/deflate.c
+@@ -647,7 +647,7 @@ int ZEXPORT deflate (strm, flush)
+         }
+         if (bstate == block_done) {
+             if (flush == Z_PARTIAL_FLUSH) {
+-                _tr_align(s);
++	      //                _tr_align(s);
+             } else { /* FULL_FLUSH or SYNC_FLUSH */
+                 _tr_stored_block(s, (char*)0, 0L, 0);
+                 /* For a full flush, this empty block will be recognized
+diff --git a/inflate.c b/inflate.c
+index a53b5c7..fdc3f05 100644
+--- a/inflate.c
++++ b/inflate.c
+@@ -6,6 +6,12 @@
+ /*
+  * Change history:
+  *
++ * cph          26 Oct 2004
++ * - A few minor hacks to allow me to locate safe start points in streams
++ *   and to position a new inflate on the right bit. I hereby place any 
++ *   changes to this file (and the zlib.h and inflate.h in this dir) into 
++ *   the public domain.
++ *
+  * 1.2.beta0    24 Nov 2002
+  * - First version -- complete rewrite of inflate to simplify code, avoid
+  *   creation of window when not needed, minimize use of window when it is
+@@ -83,7 +89,6 @@
+ #include "zutil.h"
+ #include "inftrees.h"
+ #include "inflate.h"
+-#include "inffast.h"
+ 
+ #ifdef MAKEFIXED
+ #  ifndef BUILDFIXED
+@@ -93,7 +98,6 @@
+ 
+ /* function prototypes */
+ local void fixedtables OF((struct inflate_state FAR *state));
+-local int updatewindow OF((z_streamp strm, unsigned out));
+ #ifdef BUILDFIXED
+    void makefixed OF((void));
+ #endif
+@@ -300,7 +304,7 @@ void makefixed()
+    output will fall in the output data, making match copies simpler and faster.
+    The advantage may be dependent on the size of the processor's data caches.
+  */
+-local int updatewindow(strm, out)
++int updatewindow(strm, out)
+ z_streamp strm;
+ unsigned out;
+ {
+@@ -861,6 +865,9 @@ int flush;
+                 }
+             }
+ 
++            if (state->mode == BAD)
++                break;
++
+             /* build code tables */
+             state->next = state->codes;
+             state->lencode = (code const FAR *)(state->next);
+@@ -884,12 +891,10 @@ int flush;
+             Tracev((stderr, "inflate:       codes ok\n"));
+             state->mode = LEN;
+         case LEN:
+-            if (have >= 6 && left >= 258) {
+-                RESTORE();
+-                inflate_fast(strm, out);
+-                LOAD();
+-                break;
+-            }
++	    state->mode = LENDO;
++	    goto inf_leave;
++	case LENDO:
++	    /* cph - remove inflate_fast */
+             for (;;) {
+                 this = state->lencode[BITS(state->lenbits)];
+                 if ((unsigned)(this.bits) <= bits) break;
+@@ -1268,3 +1273,48 @@ z_streamp source;
+     dest->state = (voidpf)copy;
+     return Z_OK;
+ }
++
++/* cph 2004/10/17 
++ * Extra stuff I need to move around in gzip files
++ */
++
++void inflate_advance(strm,zoffset,b,s)
++     z_streamp strm;
++     int zoffset;
++     int b;
++     int s;
++{
++  struct inflate_state FAR* state = (struct inflate_state FAR *)strm->state;
++
++  if (s)
++    state->mode = TYPEDO;
++  else if (state->mode == COPY) {
++    /* Reduce length remaining to copy by correct number */
++    state->length -= zoffset - strm->total_in;
++  } else
++    state->mode = LENDO;
++
++  strm->total_in = zoffset; /* We are here, plus a few more bits. */
++
++  if (b) {
++    state->hold = *(strm->next_in)++;
++    state->hold >>= b;
++    state->bits = 8-b;
++    strm->avail_in--;
++    strm->total_in++;
++  } else {
++    state->bits = 0;
++    state->hold = 0;
++  }
++}
++
++int ZEXPORT inflateSafePoint(strm)
++z_streamp strm;
++{
++    struct inflate_state FAR *state;
++
++    if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
++    state = (struct inflate_state FAR *)strm->state;
++    return (state->mode == LENDO || state->mode == COPY);
++}
++
+diff --git a/inflate.h b/inflate.h
+index 9a12c8f..38f534e 100644
+--- a/inflate.h
++++ b/inflate.h
+@@ -39,6 +39,7 @@ typedef enum {
+         LENLENS,    /* i: waiting for code length code lengths */
+         CODELENS,   /* i: waiting for length/lit and distance code lengths */
+             LEN,        /* i: waiting for length/lit code */
++            LENDO,      /* i: same, but skip exit check */
+             LENEXT,     /* i: waiting for length extra bits */
+             DIST,       /* i: waiting for distance code */
+             DISTEXT,    /* i: waiting for distance extra bits */
+diff --git a/inftrees.c b/inftrees.c
+index 767ae1f..03df0f2 100644
+--- a/inftrees.c
++++ b/inftrees.c
+@@ -134,7 +134,7 @@ unsigned short FAR *work;
+         left -= count[len];
+         if (left < 0) return -1;        /* over-subscribed */
+     }
+-    if (left > 0 && (type == CODES || (codes - count[0] != 1)))
++    if (left > 0 && (type == CODES || max != 1))
+         return -1;                      /* incomplete set */
+ 
+     /* generate offsets into symbol table for each length for sorting */
+diff --git a/inftrees.h b/inftrees.h
+index 82d365a..b1104c8 100644
+--- a/inftrees.h
++++ b/inftrees.h
+@@ -1,5 +1,5 @@
+ /* inftrees.h -- header to use inftrees.c
+- * Copyright (C) 1995-2003 Mark Adler
++ * Copyright (C) 1995-2005 Mark Adler
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+ 
+@@ -36,12 +36,12 @@ typedef struct {
+  */
+ 
+ /* Maximum size of dynamic tree.  The maximum found in a long but non-
+-   exhaustive search was 1004 code structures (850 for length/literals
+-   and 154 for distances, the latter actually the result of an
++   exhaustive search was 1444 code structures (852 for length/literals
++   and 592 for distances, the latter actually the result of an
+    exhaustive search).  The true maximum is not known, but the value
+    below is more than safe. */
+-#define ENOUGH 1440
+-#define MAXD 154
++#define ENOUGH 2048
++#define MAXD 592
+ 
+ /* Type of code to build for inftable() */
+ typedef enum {
+diff --git a/zconf.h b/zconf.h
+index 3cea897..4fc0b7c 100644
+--- a/zconf.h
++++ b/zconf.h
+@@ -275,9 +275,8 @@ typedef uLong FAR uLongf;
+    typedef Byte       *voidp;
+ #endif
+ 
+-#if 0           /* HAVE_UNISTD_H -- this line is updated by ./configure */
++#if 1           /* HAVE_UNISTD_H -- this line is updated by ./configure */
+ #  include <sys/types.h> /* for off_t */
+-#  include <unistd.h>    /* for SEEK_* and off_t */
+ #  ifdef VMS
+ #    include <unixio.h>   /* for off_t */
+ #  endif
+diff --git a/zlib.h b/zlib.h
+index c97f682..71ffa23 100644
+--- a/zlib.h
++++ b/zlib.h
+@@ -977,9 +977,10 @@ ZEXTERN int ZEXPORT    gzread  OF((gzFile file, voidp buf, unsigned len));
+    of bytes into the buffer.
+      gzread returns the number of uncompressed bytes actually read (0 for
+    end of file, -1 for error). */
+-
++#if 0
+ ZEXTERN int ZEXPORT    gzwrite OF((gzFile file,
+                                    voidpc buf, unsigned len));
++#endif
+ /*
+      Writes the given number of uncompressed bytes into the compressed file.
+    gzwrite returns the number of uncompressed bytes actually written
+@@ -1151,6 +1152,8 @@ ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
+      if (crc != original_crc) error();
+ */
+ 
++ZEXTERN int ZEXPORT updatewindow OF((z_streamp strm, unsigned out));
++ZEXTERN void ZEXPORT inflate_advance OF((z_streamp strm, int zoffset, int b, int s));
+ 
+                         /* various hacks, don't look :) */
+ 
+@@ -1191,6 +1194,7 @@ ZEXTERN int ZEXPORT inflateBackInit_ OF((z_stream FAR *strm, int windowBits,
+ 
+ ZEXTERN const char   * ZEXPORT zError           OF((int err));
+ ZEXTERN int            ZEXPORT inflateSyncPoint OF((z_streamp z));
++ZEXTERN int            ZEXPORT inflateSafePoint OF((z_streamp z));
+ ZEXTERN const uLongf * ZEXPORT get_crc_table    OF((void));
+ 
+ #ifdef __cplusplus

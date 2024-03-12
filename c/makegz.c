@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "zlib/zlib.h"
+#include <zlib.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>

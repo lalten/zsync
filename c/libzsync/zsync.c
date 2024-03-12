@@ -48,7 +48,7 @@
 # include <dmalloc.h>
 #endif
 
-#include "zlib/zlib.h"
+#include <zlib.h>
 
 #include "librcksum/rcksum.h"
 #include "zsync.h"
@@ -116,7 +116,7 @@ struct zsync_state {
 };
 
 static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
-                                int rsum_bytes, int checksum_bytes,
+                                int rsum_bytes, unsigned int checksum_bytes,
                                 int seq_matches);
 static int zsync_sha1(struct zsync_state *zs, int fh);
 static int zsync_recompress(struct zsync_state *zs);
@@ -786,7 +786,7 @@ static void zsync_configure_zstream_for_zdata(const struct zsync_state *zs,
         /* Fake an output buffer of 32k filled with data to zlib */
         zstrm->next_out = wbuf + lookback;
         zstrm->avail_out = 0;
-        updatewindow(zstrm, lookback);
+        updatewindow(zstrm, zstrm->next_out, lookback);
     }
 }
 

@@ -1,5 +1,14 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
+local_defines = [
+    "HAVE_INTTYPES_H",
+    "_XOPEN_SOURCE=700",
+    'VERSION=\\"0.6.2\\"',
+    "HAVE_GETADDRINFO",
+    'VERSION=\\"0.6.2\\"',
+    'PACKAGE=\\"zsync\\"',
+]
+
 cc_library(
     name = "zsglobal",
     hdrs = ["zsglobal.h"],
@@ -29,7 +38,7 @@ cc_library(
         "librcksum/state.c",
     ],
     hdrs = ["librcksum/rcksum.h"],
-    defines = ["HAVE_INTTYPES_H"],
+    local_defines = local_defines,
     deps = [
         ":progress",
         ":zsglobal",
@@ -46,7 +55,7 @@ cc_library(
         "libzsync/zsync.c",
     ],
     hdrs = ["libzsync/zsync.h"],
-    defines = ['VERSION=\\"0.6.2\\"'],
+    local_defines = local_defines,
     deps = [
         ":format_string",
         ":librcksum",
@@ -62,10 +71,7 @@ cc_binary(
         "makegz.c",
         "makegz.h",
     ],
-    defines = [
-        'VERSION=\\"0.6.2\\"',
-        'PACKAGE=\\"zsyncmake\\"',
-    ],
+    local_defines = local_defines,
     deps = [
         ":format_string",
         ":librcksum",
@@ -85,11 +91,7 @@ cc_binary(
         "url.c",
         "url.h",
     ],
-    defines = [
-        "HAVE_GETADDRINFO",
-        'VERSION=\\"0.6.2\\"',
-        'PACKAGE=\\"zsync\\"',
-    ],
+    local_defines = local_defines,
     deps = [
         ":format_string",
         ":librcksum",

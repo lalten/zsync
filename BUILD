@@ -3,7 +3,6 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 local_defines = [
     "_XOPEN_SOURCE=700",
     'VERSION=\\"0.6.2\\"',
-    "HAVE_GETADDRINFO",
     'VERSION=\\"0.6.2\\"',
     'PACKAGE=\\"zsync\\"',
 ]

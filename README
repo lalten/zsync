@@ -1,4 +1,4 @@
-zsync 0.6.3
+zsync3
 ===========
 
 zsync is a file transfer program. It allows you to download a file from a
@@ -16,19 +16,7 @@ download - it is generated once, then any downloaders with zsync can use it.
 Alternatively, anyone can download the file, make a .zsync and provide it to
 other users (this is what I am doing for the moment).
 
-The zsync web site is at http://zsync.moria.org.uk/ . There are likely to be
-frequent releases, so check back often.
-
-Installation
-------------
-
-See the file INSTALL for instructions on compiling and (optionally) installing
-zsync.
-
-As zsync is still at a very early stage, you may prefer not to install it, and
-to run the program where you compile it. It will work fine that way - it has no
-data files or libraries. The man(1) program on some systems will let you read
-the man pages without installing them, e.g. man -l doc/zsync.1 .
+The zsync web site is at http://zsync.moria.org.uk/ .
 
 zsync is free software. There is no implied support, no implied fitness for
 purpose, no warranty. You use it at your own risk.
@@ -44,9 +32,7 @@ Someone has to make a .zsync file for the download before you can use zsync. As
 zsync has not been around long, there won't be many such downloads around :-).
 And you have to have an older copy of the file around, otherwise there is
 little point in using zsync - zsync normally looks in the current directory for
-a file of the same name as the one being downloaded (note: if the download is a
-.gz file, the local file should be uncompressed - use gzip -d to decompress it
-first). If the local file is not in the current directory or has a different
+a file of the same name as the one being downloaded. If the local file is not in the current directory or has a different
 name, you can specify it with -i, e.g.:
 
 zsync -i /var/lib/apt/lists/ftp.uk.debian.org_debian_dists_sarge_main_binary-i386_Packages http://zsync.moria.org.uk/s/sarge/Packages.zsync
@@ -72,21 +58,6 @@ bits.
 
 zsync -i some-image-0.1.iso http://example.com/dl/some-image-0.2.iso.zsync
 
-Compressed example:
-Support you have http://example.com/downloads/big-0.2.tar.gz ; which is
-in /var/www/downloads/ on your server.
-
-cd /var/www/downloads/
-zsyncmake -u 'http://example.com/downloads/big-0.2.tar.gz' big-0.2.tar.gz
-
-This creates big-0.2.tar.zsync in the same directory, and specifies the URL
-from which users can see the file.  
-
-A user with v0.1 of the same file can now use zsync to download only the new
-bits:
-
-zsync -i <(zcat big-0.1.tar.gz) http://example.com/downloads/big-0.2.tar.zsync
-
 Feedback, Support
 -----------------
 
@@ -101,16 +72,6 @@ zsync is based on the rsync algorithm, by Andrew Tridgell. It also incorporates
 a number of optimisations, based on ideas in academic papers by Utku Irmak,
 Svilen Mihaylov and Torsten Suel (primarily "Improved Single-Round Protocols
 for Remote File Synchronization", Sept 2004).
-
-zsync uses a large part of zlib - this code, in the zlib subdirectory, is
-copyright 1995-2003 Jean-loup Gailly and Mark Adler, see zlib/README for
-details. This code contains local changes by me that are not compatible with
-and not available in standard zlib; see zlib/README.zsync for an explanation.
-
-zsync includes an implementation of getaddrinfo by Motoyuki Kasahara. See
-getaddrinfo.c for the license, it's a BSD-style license; but normally zsync
-compiles against the getaddrinfo() in the system libc, so this code is not
-normally used.
 
 zsync also includes checksum code taken from OpenBSD. The MD4 code is public
 domain, by Colin Plumb and Todd C. Miller. The SHA1 code is also public

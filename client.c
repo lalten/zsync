@@ -36,71 +36,15 @@
 #include "url.h"
 #include "progress.h"
 
-/* FILE* f = open_zcat_pipe(file_str)
- * Returns a (popen) filehandle which when read returns the un-gzipped content
- * of the given file. Or NULL on error; or the filehandle may fail to read. It
- * is up to the caller to call pclose() on the handle and check the return
- * value of that.
- */
-FILE* open_zcat_pipe(const char* fname)
-{
-    /* Get buffer to build command line */
-    char *cmd = malloc(6 + strlen(fname) * 2);
-    if (!cmd)
-        return NULL;
-
-    strcpy(cmd, "zcat ");
-    {   /* Add filename to commandline, escaping any characters that the shell
-         *might consider special. */
-        int i, j;
-
-        for (i = 0, j = 5; fname[i]; i++) {
-            if (!isalnum(fname[i]))
-                cmd[j++] = '\\';
-            cmd[j++] = fname[i];
-        }
-        cmd[j] = 0;
-    }
-
-    if (!no_progress)
-        fprintf(stderr, "reading seed %s: ", cmd);
-    {   /* Finally, open the subshell for reading, and return the handle */
-        FILE* f = popen(cmd, "r");
-        free(cmd);
-        return f;
-    }
-}
-
 /* read_seed_file(zsync, filename_str)
- * Reads the given file (decompressing it if appropriate) and applies the rsync
+ * Reads the given file and applies the rsync
  * checksum algorithm to it, so any data that is contained in the target file
  * is written to the in-progress target. So use this function to supply local
  * source files which are believed to have data in common with the target.
  */
 void read_seed_file(struct zsync_state *z, const char *fname) {
-    /* If we should decompress this file */
-    if (zsync_hint_decompress(z) && strlen(fname) > 3
-        && !strcmp(fname + strlen(fname) - 3, ".gz")) {
-        /* Open for reading */
-        FILE *f = open_zcat_pipe(fname);
-        if (!f) {
-            perror("popen");
-            fprintf(stderr, "not using seed file %s\n", fname);
-        }
-        else {
-
-            /* Give the contents to libzsync to read and find any useful
-             * content */
-            zsync_submit_source_file(z, f, !no_progress);
-
-            /* Close and check for errors */
-            if (pclose(f) != 0) {
-                perror("close");
-            }
-        }
-    }
-    else {
-        /* Simple uncompressed file - open it */
+    {
+        /* Simple file - open it */
         FILE *f = fopen(fname, "r");
         if (!f) {
             perror("open");
@@ -272,17 +216,14 @@ static float calc_zsync_progress(const struct zsync_state *zs) {
     return (100.0f * zgot / ztot);
 }
 
-/* fetch_remaining_blocks_http(struct zsync*, const char* url, int type)
- * For the given zsync_state, using the given absolute HTTP URL (which is a
- * copy of the actual content of the target file is type == 0, or a compressed
- * copy of it if type == 1), retrieve the parts of the target that are
- * currently missing.
+/* fetch_remaining_blocks_http(struct zsync*, const char* url)
+ * For the given zsync_state, using the given absolute HTTP URL,
+ * retrieve the parts of the target that are currently missing.
  * Returns 0 if this URL was useful, non-zero if we crashed and burned.
  */
 #define BUFFERSIZE 8192
 
-int fetch_remaining_blocks_http(struct zsync_state *z, const char *u,
-                                int type) {
+int fetch_remaining_blocks_http(struct zsync_state *z, const char *u) {
     int ret = 0;
     struct range_fetch *rf;
     unsigned char *buf;
@@ -293,7 +234,7 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u,
     if (!rf) {
         return -1;
     }
-    zr = zsync_begin_receive(z, type);
+    zr = zsync_begin_receive(z);
     if (!zr) {
         range_fetch_end(rf);
         return -1;
@@ -312,7 +253,7 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u,
 
     {   /* Get a set of byte ranges that we need to complete the target */
         int nrange;
-        off_t *zbyterange = zsync_needed_byte_ranges(z, &nrange, type);
+        off_t *zbyterange = zsync_needed_byte_ranges(z, &nrange);
         if (!zbyterange)
             return 1;
         if (nrange == 0)
@@ -372,14 +313,12 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u,
     return ret;
 }
 
-/* fetch_remaining_blocks_from_url(struct zsync_state*, url, type)
- * For the given zsync_state, using the given URL (which is a copy of the
- * actual content of the target file is type == 0, or a compressed copy of it
- * if type == 1), retrieve the parts of the target that are currently missing.
+/* fetch_remaining_blocks_from_url(struct zsync_state*, url)
+ * For the given zsync_state, using the given URL,
+ * retrieve the parts of the target that are currently missing.
  * Returns true if this URL was useful, false if we crashed and burned.
  */
-int fetch_remaining_blocks_from_url(struct zsync_state *zs, const char *url,
-                                int type) {
+int fetch_remaining_blocks_from_url(struct zsync_state *zs, const char *url) {
     /* URL might be relative - we need an absolute URL to do a fetch */
     char *abs_url = make_url_absolute(referer, url);
     if (!abs_url) {
@@ -389,7 +328,7 @@ int fetch_remaining_blocks_from_url(struct zsync_state *zs, const char *url,
         return -1;
     }
     /* Try fetching data from this URL */
-    int rc = fetch_remaining_blocks_http(zs, abs_url, type);
+    int rc = fetch_remaining_blocks_http(zs, abs_url);
     if (rc != 0) {
         fprintf(stderr, "failed to retrieve from %s\n", abs_url);
     }
@@ -404,8 +343,8 @@ int fetch_remaining_blocks_from_url(struct zsync_state *zs, const char *url,
  * case consult zsync_status to see how far it got).
  */
 int fetch_remaining_blocks(struct zsync_state *zs) {
-    int n, utype;
-    const char *const *url = zsync_get_urls(zs, &n, &utype);
+    int n;
+    const char *const *url = zsync_get_urls(zs, &n);
     int *status;        /* keep status for each URL - 0 means no error */
     int ok_urls = n;
 
@@ -422,7 +361,7 @@ int fetch_remaining_blocks(struct zsync_state *zs) {
 
         if (!status[try]) {
             /* Try fetching data from this URL */
-            int rc = fetch_remaining_blocks_from_url(zs, url[try], utype);
+            int rc = fetch_remaining_blocks_from_url(zs, url[try]);
             if (rc != 0) {
                 status[try] = 1;
                 ok_urls--;
@@ -593,7 +532,7 @@ int main(int argc, char **argv) {
         if (!local_used) {
             if (!no_progress)
                 fputs
-                    ("No relevent local data found - I will be downloading the whole file. If that's not what you want, CTRL-C out. You should specify the local file is the old version of the file to download with -i (you might have to decompress it with gzip -d first). Or perhaps you just have no data that helps download the file\n",
+                    ("No relevent local data found - I will be downloading the whole file. If that's not what you want, CTRL-C out. You should specify the local file is the old version of the file to download with -i. Or perhaps you just have no data that helps download the file\n",
                      stderr);
         }
     }

@@ -2,8 +2,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 local_defines = [
     "_XOPEN_SOURCE=700",
-    'VERSION=\\"0.6.2\\"',
-    'VERSION=\\"0.6.2\\"',
+    'VERSION=\\"3.0.0\\"',
     'PACKAGE=\\"zsync\\"',
 ]
 
@@ -58,8 +57,6 @@ cc_library(
     srcs = [
         "libzsync/sha1.c",
         "libzsync/sha1.h",
-        "libzsync/zmap.c",
-        "libzsync/zmap.h",
         "libzsync/zsync.c",
     ],
     hdrs = ["libzsync/zsync.h"],
@@ -68,7 +65,6 @@ cc_library(
         ":format_string",
         ":librcksum",
         ":zsglobal",
-        "@zlib",
     ],
 )
 
@@ -85,18 +81,13 @@ cc_test(
 
 cc_binary(
     name = "zsyncmake",
-    srcs = [
-        "make.c",
-        "makegz.c",
-        "makegz.h",
-    ],
+    srcs = ["make.c"],
     local_defines = local_defines,
     deps = [
         ":format_string",
         ":librcksum",
         ":libzsync",
         ":zsglobal",
-        "@zlib",
     ],
 )
 
@@ -117,6 +108,5 @@ cc_binary(
         ":libzsync",
         ":progress",
         ":zsglobal",
-        "@zlib",
     ],
 )

@@ -1,4 +1,2 @@
 module(name = "zsync", version = "0.6.2")
 bazel_dep(name = "rules_cc", version = "0.0.9")
-bazel_dep(name = "zlib", version = "1.3.1")
-single_version_override(module_name = "zlib", patches = ["//:zlib/zlib_131.patch"], patch_strip = 1)

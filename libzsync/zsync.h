@@ -13,15 +13,14 @@
  *   COPYING file for details.
  */
 
+#include <stdio.h>
+#include <time.h>
+
 struct zsync_state;
 
 /* zsync_begin - load a zsync file and return data structure to use for the rest of the process.
  */
 struct zsync_state* zsync_begin(FILE* cf);
-
-/* zsync_hint_decompress - if it returns non-zero, this suggests that 
- *  compressed seed files should be decompressed */
-int zsync_hint_decompress(const struct zsync_state*);
 
 /* zsync_filename - return the suggested filename from the .zsync file */
 char* zsync_filename(const struct zsync_state*);
@@ -53,12 +52,11 @@ int zsync_submit_source_file(struct zsync_state* zs, FILE* f, int progress);
 
 /* zsync_get_url - returns a URL from which to get needed data.
  * Returns NULL on failure, or a array of pointers to URLs.
- * Returns the size of the array in *n,
- * and the url type (to pass to needed_byte_ranges & begin_receive)
+ * Returns the size of the array in *n.
  * (the URL pointers are still referenced by the library, and are valid only until zsync_end).
  */
 
-const char * const * zsync_get_urls(struct zsync_state* zs, int* n, int* t);
+const char * const * zsync_get_urls(struct zsync_state* zs, int* n);
 
 /* zsync_needed_byte_ranges - get the byte ranges needed from a URL.
  * Returns the number of ranges in *num, and a malloc'd array (to be freed 
@@ -66,7 +64,7 @@ const char * const * zsync_get_urls(struct zsync_state* zs, int* n, int* t);
  * of byte ranges.
  */
 
-off_t* zsync_needed_byte_ranges(struct zsync_state* zs, int* num, int type);
+off_t* zsync_needed_byte_ranges(struct zsync_state* zs, int* num);
 
 /* zsync_complete - set file length and verify checksum if available
  * Returns -1 for failure, 1 for success, 0 for unable to verify (e.g. no checksum in the .zsync) */
@@ -84,9 +82,8 @@ struct zsync_receiver;
  *  and libzsync does not do reference counting, so it is the caller's 
  *  responsibility not to do a zsync_end without doing a zsync_end_receive 
  *  first.
- * The url_type is as in the value returned by zsync_get_url.
  */
-struct zsync_receiver* zsync_begin_receive(struct zsync_state*zs, int url_type);
+struct zsync_receiver* zsync_begin_receive(struct zsync_state*zs);
 void zsync_end_receive(struct zsync_receiver* zr);
 
 /* Supply data buf of length len received corresponding to offset offset from the URL.

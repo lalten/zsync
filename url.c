@@ -21,10 +21,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef WITH_DMALLOC
-# include <dmalloc.h>
-#endif
-
 #include "url.h"
 
 const char http_scheme[] = { "http://" };

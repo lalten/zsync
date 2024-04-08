@@ -21,10 +21,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-#ifdef WITH_DMALLOC
-# include <dmalloc.h>
-#endif
-
 #include "progress.h"
 
 #define HISTORY 10

@@ -25,10 +25,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef WITH_DMALLOC
-# include <dmalloc.h>
-#endif
-
 /* fputlong(filehandle, long)
  * Writes a 32bit int as raw bytes in little-endian to the given filehandle.
  * Returns 0 if successful; otherwise ferror(filehandle) to see the error */

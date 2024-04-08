@@ -28,10 +28,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef WITH_DMALLOC
-# include <dmalloc.h>
-#endif
-
 #include "md4.h"
 #include "rcksum.h"
 #include "internal.h"

@@ -25,10 +25,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifdef WITH_DMALLOC
-# include <dmalloc.h>
-#endif
-
 #include "rcksum.h"
 #include "internal.h"
 

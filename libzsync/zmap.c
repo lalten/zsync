@@ -30,10 +30,6 @@
 #include <arpa/inet.h>
 #include <inttypes.h>
 
-#ifdef WITH_DMALLOC
-# include <dmalloc.h>
-#endif
-
 #include "zmap.h"
 #include "format_string.h"
 

@@ -36,10 +36,6 @@
 #include "getaddrinfo.h"
 #endif
 
-#ifdef WITH_DMALLOC
-# include <dmalloc.h>
-#endif
-
 #include "http.h"
 #include "url.h"
 #include "progress.h"

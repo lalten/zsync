@@ -1,7 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 local_defines = [
-    "HAVE_INTTYPES_H",
     "_XOPEN_SOURCE=700",
     'VERSION=\\"0.6.2\\"',
     "HAVE_GETADDRINFO",

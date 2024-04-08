@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 local_defines = [
     "HAVE_INTTYPES_H",
@@ -45,6 +45,16 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "md4test",
+    srcs = [
+        "librcksum/md4.c",
+        "librcksum/md4.h",
+        "librcksum/md4test.c",
+    ],
+    deps = [":zsglobal"],
+)
+
 cc_library(
     name = "libzsync",
     srcs = [
@@ -62,6 +72,17 @@ cc_library(
         ":zsglobal",
         "@zlib",
     ],
+)
+
+cc_test(
+    name = "sha1test",
+    srcs = [
+        "libzsync/sha1.c",
+        "libzsync/sha1.h",
+        "libzsync/sha1test.c",
+    ],
+    local_defines = local_defines,
+    deps = [":zsglobal"],
 )
 
 cc_binary(

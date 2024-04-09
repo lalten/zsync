@@ -108,5 +108,20 @@ cc_binary(
         ":libzsync",
         ":progress",
         ":zsglobal",
+        ":curl",
     ],
+)
+
+cc_library(
+    name = "curl",
+    hdrs = ["curl.h"],
+    srcs = ["curl.c"],
+)
+
+cc_test (
+    name = "curl_test",
+    timeout  = "short",
+    srcs = ["curl_test.c"],
+    deps = [":curl"],
+    data = ["curl_test.txt"],
 )

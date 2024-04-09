@@ -18,6 +18,7 @@
 
 #include "zsglobal.h"
 
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +36,7 @@
 #include "http.h"
 #include "url.h"
 #include "progress.h"
+#include "curl.h"
 
 /* read_seed_file(zsync, filename_str)
  * Reads the given file and applies the rsync
@@ -99,44 +101,27 @@ static void **append_ptrlist(int *n, void **p, void *a) {
     return p;
 }
 
-/* zs = read_zsync_control_file(location_str, filename)
+/* zs = read_zsync_control_file(location_str)
  * Reads a zsync control file from either a URL or filename specified in
  * location_str. This is treated as a URL if no local file exists of that name
  * and it starts with a URL scheme ; only http URLs are supported.
- * Second parameter is a filename in which to locally save the content of the
- * .zsync _if it is retrieved from a URL_; can be NULL in which case no local
- * copy is made.
  */
-struct zsync_state *read_zsync_control_file(const char *p, const char *fn) {
-    FILE *f;
-    struct zsync_state *zs;
-    char *lastpath = NULL;
-
-    /* Try opening as a local path */
-    f = fopen(p, "r");
-    if (!f) {
-        /* No such local file - if not a URL either, report error */
-        if (!is_url_absolute(p)) {
-            perror(p);
-            exit(2);
-        }
-
-        /* Try URL fetch */
-        f = http_get(p, &lastpath, fn);
-        if (!f) {
-            fprintf(stderr, "could not read control file from URL %s\n", p);
-            exit(3);
-        }
-        referer = lastpath;
-    }
+struct zsync_state *read_zsync_control_file(const char *p) {
+    char url[PATH_MAX] = "url = ";
+    strcat(url, p);
+    const char *curl_options[] = {
+        url, "fail-with-body", "silent", "show-error", "netrc", NULL,
+    };
+    FILE *f = curl(curl_options);
 
     /* Read the .zsync */
+    struct zsync_state *zs;
     if ((zs = zsync_begin(f)) == NULL) {
         exit(1);
     }
 
     /* And close it */
-    if (fclose(f) != 0) {
+    if (pclose(f) != 0) {
         perror("fclose");
         exit(2);
     }
@@ -402,14 +387,13 @@ int main(int argc, char **argv) {
     int nseedfiles = 0;
     char *filename = NULL;
     long long local_used;
-    char *zfname = NULL;
     time_t mtime;
 
     srand(getpid());
     {   /* Option parsing */
         int opt;
 
-        while ((opt = getopt(argc, argv, "A:k:o:i:Vsqu:")) != -1) {
+        while ((opt = getopt(argc, argv, "A:o:i:Vsqu:")) != -1) {
             switch (opt) {
             case 'A':           /* Authentication options for remote server */
                 {               /* Scan string as hostname=username:password */
@@ -427,10 +411,6 @@ int main(int argc, char **argv) {
                         add_auth(p, q, r);
                     }
                 }
-                break;
-            case 'k':
-                free(zfname);
-                zfname = strdup(optarg);
                 break;
             case 'o':
                 free(filename);
@@ -478,7 +458,7 @@ int main(int argc, char **argv) {
     }
 
     /* STEP 1: Read the zsync control file */
-    if ((zs = read_zsync_control_file(argv[optind], zfname)) == NULL)
+    if ((zs = read_zsync_control_file(argv[optind])) == NULL)
         exit(1);
 
     /* Get eventual filename for output, and filename to write to while working */

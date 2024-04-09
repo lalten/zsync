@@ -11,7 +11,6 @@ int main() {
     getcwd(cwd, PATH_MAX);
     strcat(url, cwd);
     strcat(url, "/curl_test.txt");
-    char *getcwd(char *buf, size_t size);
     const char *options[] = {url, NULL};
 
     FILE *f = curl_open(options);

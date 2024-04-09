@@ -14,7 +14,7 @@ int main() {
     char *getcwd(char *buf, size_t size);
     const char *options[] = {url, NULL};
 
-    FILE *f = curl(options);
+    FILE *f = curl_open(options);
     if (!f) {
         fprintf(stderr, "curl failed");
         return EXIT_FAILURE;
@@ -26,6 +26,6 @@ int main() {
         fprintf(stderr, "unexpected output: %s", buffer);
         return EXIT_FAILURE;
     }
-    fclose(f);
+    curl_close(f);
     return EXIT_SUCCESS;
 }

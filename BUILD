@@ -94,10 +94,7 @@ cc_binary(
 cc_binary(
     name = "zsync",
     srcs = [
-        "base64.c",
         "client.c",
-        "http.c",
-        "http.h",
         "url.c",
         "url.h",
     ],

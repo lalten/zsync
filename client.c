@@ -33,7 +33,6 @@
 
 #include "libzsync/zsync.h"
 
-#include "http.h"
 #include "url.h"
 #include "progress.h"
 #include "curl.h"
@@ -78,6 +77,7 @@ void read_seed_file(struct zsync_state *z, const char *fname) {
 }
 
 long long http_down;
+char *referer;
 
 /* A ptrlist is a very simple structure for storing lists of pointers. This is
  * the only function in its API. The structure (not actually a struct) consists
@@ -110,9 +110,10 @@ struct zsync_state *read_zsync_control_file(const char *p) {
     char url[PATH_MAX] = "url = ";
     strcat(url, p);
     const char *curl_options[] = {
-        url, "fail-with-body", "silent", "show-error", "netrc", NULL,
+        url,        "fail-with-body", "silent", "show-error",
+        "location", "netrc",          NULL,
     };
-    FILE *f = curl(curl_options);
+    FILE *f = curl_open(curl_options);
 
     /* Read the .zsync */
     struct zsync_state *zs;
@@ -121,7 +122,7 @@ struct zsync_state *read_zsync_control_file(const char *p) {
     }
 
     /* And close it */
-    if (pclose(f) != 0) {
+    if (curl_close(f) != 0) {
         perror("fclose");
         exit(2);
     }
@@ -192,109 +193,89 @@ char *get_filename(const struct zsync_state *zs, const char *source_name) {
     return filename;
 }
 
-/* prog = calc_zsync_progress(zs)
- * Returns the progress ratio 0..1 (none...done) for the given zsync_state */
-static float calc_zsync_progress(const struct zsync_state *zs) {
-    long long zgot, ztot;
-
-    zsync_progress(zs, &zgot, &ztot);
-    return (100.0f * zgot / ztot);
-}
-
 /* fetch_remaining_blocks_http(struct zsync*, const char* url)
  * For the given zsync_state, using the given absolute HTTP URL,
  * retrieve the parts of the target that are currently missing.
  * Returns 0 if this URL was useful, non-zero if we crashed and burned.
  */
-#define BUFFERSIZE 8192
-
 int fetch_remaining_blocks_http(struct zsync_state *z, const char *u) {
     int ret = 0;
-    struct range_fetch *rf;
-    unsigned char *buf;
-    struct zsync_receiver *zr;
-
-    /* Start a range fetch and a zsync receiver */
-    rf = range_fetch_start(u);
-    if (!rf) {
-        return -1;
-    }
-    zr = zsync_begin_receive(z);
+    struct zsync_receiver *zr = zsync_begin_receive(z);
     if (!zr) {
-        range_fetch_end(rf);
         return -1;
     }
 
     if (!no_progress)
-        fprintf(stderr, "downloading new blocks from %s:", u);
+        fprintf(stderr, "downloading new blocks from %s:\n", u);
 
-    /* Create a read buffer */
-    buf = malloc(BUFFERSIZE);
-    if (!buf) {
-        zsync_end_receive(zr);
-        range_fetch_end(rf);
-        return -1;
-    }
+    /* Get a set of byte ranges that we need to complete the target */
+    int nrange = 0;
+    off_t *zbyterange = zsync_needed_byte_ranges(z, &nrange);
+    if (!zbyterange)
+        return 1;
+    if (nrange == 0)
+        return 0;
 
-    {   /* Get a set of byte ranges that we need to complete the target */
-        int nrange;
-        off_t *zbyterange = zsync_needed_byte_ranges(z, &nrange);
-        if (!zbyterange)
-            return 1;
-        if (nrange == 0)
-            return 0;
+    char url[PATH_MAX] = "url = ";
+    strcat(url, u);
+    const char *curl_options[] = {
+        NULL,         url,        "fail-with-body", "silent",
+        "show-error", "location", "netrc",          NULL,
+    };
 
-        /* And give that to the range fetcher */
-        range_fetch_addranges(rf, zbyterange, nrange);
-        free(zbyterange);
-    }
-
-    {
-        int len;
-        off_t zoffset;
-        struct progress *p = { 0 };
-
-        /* Set up progress display to run during the fetch */
+    /* Loop while we're receiving data, until we're done or there is an error */
+    off_t zoffset = 0;
+    for (int i = 0; i < nrange; i++) {
+        ssize_t len = zbyterange[i * 2 + 1] - zbyterange[i * 2] + 1;
+        zoffset = zbyterange[i * 2];
         if (!no_progress) {
-            fputc('\n', stderr);
-            p = start_progress();
-            do_progress(p, calc_zsync_progress(z), range_fetch_bytes_down(rf));
+            fprintf(stderr, "Getting range %d/%d: %ld+%ld\n", i+1, nrange, zoffset, len);
         }
 
-        /* Loop while we're receiving data, until we're done or there is an error */
-        while (!ret
-               && (len = get_range_block(rf, &zoffset, buf, BUFFERSIZE)) > 0) {
-            /* Pass received data to the zsync receiver, which writes it to the
-             * appropriate location in the target file */
-            if (zsync_receive_data(zr, buf, zoffset, len) != 0)
-                ret = 1;
-
-            /* Maintain progress display */
-            if (!no_progress)
-                do_progress(p, calc_zsync_progress(z),
-                            range_fetch_bytes_down(rf));
-
-            // Needed in case next call returns len=0 and we need to signal where the EOF was.
-            zoffset += len;
+        unsigned char *buf = malloc(len);
+        if(!buf){
+            perror("malloc");
+            ret = 1;
+            break;
         }
 
-        /* If error, we need to flag that to our caller */
-        if (len < 0)
-            ret = -1;
-        else    /* Else, let the zsync receiver know that we're at EOF; there
-                 *could be data in its buffer that it can use or needs to process */
-            if (zsync_receive_data(zr, NULL, zoffset, 0) != 0)
-                ret = 1;
+        char range_option[PATH_MAX] = "";
+        sprintf(range_option, "range = %ld-%ld", zoffset, zoffset+len);
+        curl_options[0] = range_option;
 
-        if (!no_progress)
-            end_progress(p, zsync_status(z) >= 2 ? 2 : len == 0 ? 1 : 0);
+        FILE *f = curl_open(curl_options);
+        if (!f){
+            perror("curl");
+            ret = 1;
+            break;
+        }
+        ssize_t read = fread(buf, 1, len, f);
+        curl_close(f);
+        if (read != len){
+            perror("curl read");
+            ret = 1;
+            break;
+        }
+
+        /* Pass received data to the zsync receiver, which writes it to the
+         * appropriate location in the target file */
+        if (zsync_receive_data(zr, buf, zoffset, len) != 0)
+            ret = 1;
+
+        free(buf);
+
+        // Needed in case next call returns len=0 and we need to signal where the EOF was.
+        zoffset += len; 
+        http_down += len;
     }
+    /* Let the zsync receiver know that we're at EOF; there
+     * could be data in its buffer that it can use or needs to process */
+    if (zsync_receive_data(zr, NULL, zoffset, 0) != 0)
+        ret = 1;
 
     /* Clean up */
-    free(buf);
-    http_down += range_fetch_bytes_down(rf);
+    free(zbyterange);
     zsync_end_receive(zr);
-    range_fetch_end(rf);
     return ret;
 }
 
@@ -393,25 +374,8 @@ int main(int argc, char **argv) {
     {   /* Option parsing */
         int opt;
 
-        while ((opt = getopt(argc, argv, "A:o:i:Vsqu:")) != -1) {
+        while ((opt = getopt(argc, argv, "o:i:Vsqu:")) != -1) {
             switch (opt) {
-            case 'A':           /* Authentication options for remote server */
-                {               /* Scan string as hostname=username:password */
-                    char *p = strdup(optarg);
-                    char *q = strchr(p, '=');
-                    char *r = q ? strchr(q, ':') : NULL;
-
-                    if (!q || !r) {
-                        fprintf(stderr,
-                                "-A takes hostname=username:password\n");
-                        exit(1);
-                    }
-                    else {
-                        *q++ = *r++ = 0;
-                        add_auth(p, q, r);
-                    }
-                }
-                break;
             case 'o':
                 free(filename);
                 filename = strdup(optarg);
@@ -450,12 +414,6 @@ int main(int argc, char **argv) {
     /* No progress display except on terminal */
     if (!isatty(0))
         no_progress = 1;
-    {   /* Get proxy setting from the environment */
-        char *pr = getenv("http_proxy");
-
-        if (pr != NULL)
-            set_proxy_from_string(pr);
-    }
 
     /* STEP 1: Read the zsync control file */
     if ((zs = read_zsync_control_file(argv[optind])) == NULL)
@@ -626,7 +584,11 @@ int main(int argc, char **argv) {
 
     /* Final stats and cleanup */
     if (!no_progress)
-        printf("used %lld local, fetched %lld\n", local_used, http_down);
+    {
+        float local_percent = 100.0f * local_used / (local_used + http_down);
+        float http_percent = 100.0f * http_down / (local_used + http_down);
+        printf("used %lld (%.2f%%) local, fetched %lld (%.2f%%)\n", local_used, local_percent, http_down, http_percent);
+    }
     free(referer);
     free(temp_file);
     return 0;

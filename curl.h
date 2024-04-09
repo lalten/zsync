@@ -2,4 +2,5 @@
 
 #include <stdio.h>
 
-FILE *curl(const char **restrict curl_options);
+FILE *curl_open(const char **restrict curl_options);
+int curl_close(FILE *stream);

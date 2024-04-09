@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-FILE *curl(const char **restrict curl_options) {
+FILE *curl_open(const char **restrict curl_options) {
     char config_file_name[L_tmpnam] = {0};
     tmpnam(config_file_name);
     FILE *config_file = fopen(config_file_name, "w");
@@ -26,4 +26,8 @@ FILE *curl(const char **restrict curl_options) {
         return NULL;
     }
     return f;
+}
+
+int curl_close(FILE *stream) {
+    return pclose(stream);
 }

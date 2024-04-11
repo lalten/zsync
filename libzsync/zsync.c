@@ -200,9 +200,7 @@ struct zsync_state *zsync_begin(FILE * f) {
                 safelines = strdup(p);
             }
             else if (! (strcmp(buf, "Z-Filename") || strcmp(buf, "Z-URL") || strcmp(buf, "Z-Map2") || strcmp(buf, "Recompress"))){
-                fprintf(stderr, "Compression operations (%s) are not supported in zsync3.\n", buf);
-                free(zs);
-                return NULL;
+                fprintf(stderr, "%s is not supported in zsync3.\n", buf);
             }
             else if (!strcmp(buf, "MTime")) {
                 zs->mtime = parse_822(p);
@@ -222,6 +220,11 @@ struct zsync_state *zsync_begin(FILE * f) {
             free(zs);
             return NULL;
         }
+    }
+    if(!zs->url) {
+        fprintf(stderr, "No URL in zsync file\n");
+        free(zs);
+        return NULL;
     }
     if (!zs->filelen || !zs->blocksize) {
         fprintf(stderr, "Not a zsync file (looked for Blocksize and Length lines)\n");

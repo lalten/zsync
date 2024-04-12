@@ -18,6 +18,7 @@
 
 #include "zsglobal.h"
 
+#include <assert.h>
 #include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,25 +108,29 @@ static void **append_ptrlist(int *n, void **p, void *a) {
  * and it starts with a URL scheme ; only http URLs are supported.
  */
 struct zsync_state *read_zsync_control_file(const char *p) {
-    char url[PATH_MAX] = "url = ";
-    strcat(url, p);
     const char *curl_options[] = {
-        url,        "fail-with-body", "silent", "show-error",
-        "location", "netrc",          NULL,
+        "--fail-with-body", "--silent", "--show-error", "--location",
+        "--netrc",          p,          NULL,
     };
-    FILE *f = curl_open(curl_options);
-
+    char *buffer = NULL;
+    size_t buffer_size = 0;
+    if (!curl_get(curl_options, &buffer, &buffer_size)) {
+        fprintf(stderr, "Failed to download %s\n", p);
+        exit(1);
+    }
+    FILE *stream = fmemopen(buffer, buffer_size, "r");
+    if(!stream) {
+        perror("fmemopen");
+        exit(1);
+    }
     /* Read the .zsync */
     struct zsync_state *zs;
-    if ((zs = zsync_begin(f)) == NULL) {
+    if ((zs = zsync_begin(stream)) == NULL) {
         exit(1);
     }
 
-    /* And close it */
-    if (curl_close(f) != 0) {
-        perror("fclose");
-        exit(2);
-    }
+    fclose(stream);
+    free(buffer);
     return zs;
 }
 
@@ -216,52 +221,41 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u) {
     if (nrange == 0)
         return 0;
 
-    char url[PATH_MAX] = "url = ";
-    strcat(url, u);
     const char *curl_options[] = {
-        NULL,         url,        "fail-with-body", "silent",
-        "show-error", "location", "netrc",          NULL,
+        NULL,         "--fail-with-body", "--silent", "--show-error",
+        "--location", "--netrc",          u,          NULL,
     };
 
     /* Loop while we're receiving data, until we're done or there is an error */
     off_t zoffset = 0;
     for (int i = 0; i < nrange; i++) {
-        ssize_t len = zbyterange[i * 2 + 1] - zbyterange[i * 2] + 1;
+        assert(zbyterange[i * 2 + 1] > zbyterange[i * 2]);
+        size_t len = zbyterange[i * 2 + 1] - zbyterange[i * 2] + 1;
         zoffset = zbyterange[i * 2];
         if (!no_progress) {
             fprintf(stderr, "Getting range %d/%d: %ld+%ld\n", i+1, nrange, zoffset, len);
         }
-
-        unsigned char *buf = malloc(len);
-        if(!buf){
-            perror("malloc");
-            ret = 1;
-            break;
-        }
-
         char range_option[PATH_MAX] = "";
-        sprintf(range_option, "range = %ld-%ld", zoffset, zoffset+len);
+        sprintf(range_option, "--range %ld-%ld", zoffset, zoffset+len);
         curl_options[0] = range_option;
 
-        FILE *f = curl_open(curl_options);
-        if (!f){
-            perror("curl");
+        char *buf = NULL;
+        size_t buf_size = 0;
+        if (!curl_get(curl_options, &buf, &buf_size)){
+            fprintf(stderr, "Failed to download range %ld-%ld of %s\n", zoffset, zoffset+len, u);
             ret = 1;
             break;
         }
-        ssize_t read = fread(buf, 1, len, f);
-        curl_close(f);
-        if (read != len){
-            perror("curl read");
+        if (buf_size < len){
+            fprintf(stderr, "short curl read (got %ld, expected %ld)\n", buf_size, len);
             ret = 1;
             break;
         }
-
         /* Pass received data to the zsync receiver, which writes it to the
          * appropriate location in the target file */
-        if (zsync_receive_data(zr, buf, zoffset, len) != 0)
+        if (zsync_receive_data(zr, (unsigned char*)buf, zoffset, len) != 0)
             ret = 1;
-
+    
         free(buf);
 
         // Needed in case next call returns len=0 and we need to signal where the EOF was.

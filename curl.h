@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdio.h>
+#include <stddef.h>
 
-FILE *curl_open(const char **restrict curl_options);
-int curl_close(FILE *stream);
+int curl_get(const char **curl_options, char **bufloc, size_t *sizeloc);

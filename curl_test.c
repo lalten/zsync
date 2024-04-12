@@ -60,9 +60,26 @@ void test_notfound() {
     }
 }
 
+void test_envvar() {
+    setenv("ZSYNC_CURL", "echo", 1);
+    const char *options[] = {"I am echoed instead", NULL};
+
+    char *curl_stdout = NULL;
+    size_t curl_stdout_len = 0;
+    int ret = curl_get(options, &curl_stdout, &curl_stdout_len);
+    if (ret != 0) {
+        exit(EXIT_FAILURE);
+    }
+    if (strcmp(curl_stdout, "I am echoed instead\n")) {
+        fprintf(stderr, "unexpected output: %s", curl_stdout);
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main() {
     test_good();
     test_help();
     test_notfound();
+    test_envvar();
     return EXIT_SUCCESS;
 }

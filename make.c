@@ -17,6 +17,7 @@
 
 #include "zsglobal.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -170,13 +171,14 @@ int main(int argc, char **argv) {
     char *infname = NULL;
     int rsum_len, checksum_len, seq_matches;
     time_t mtime = -1;
+    bool set_mtime = true;
 
     /* Open temporary file */
     FILE *tf = tmpfile();
 
     {   /* Options parsing */
         int opt;
-        while ((opt = getopt(argc, argv, "b:o:f:u:v")) != -1) {
+        while ((opt = getopt(argc, argv, "b:o:f:u:vM")) != -1) {
             switch (opt) {
             case 'o':
                 if (outfname) {
@@ -207,6 +209,10 @@ int main(int argc, char **argv) {
             case 'v':
                 verbose++;
                 break;
+            case 'M':
+                /* Do not set the MTime header */
+                set_mtime = false;
+                break;
             }
         }
 
@@ -219,7 +225,7 @@ int main(int argc, char **argv) {
                 exit(2);
             }
 
-            {   /* Get mtime if available */
+            if (set_mtime) {   /* Get mtime if available */
                 struct stat st;
                 if (fstat(fileno(instream), &st) == 0) {
                     mtime = st.st_mtime;

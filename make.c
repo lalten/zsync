@@ -165,8 +165,6 @@ int main(int argc, char **argv) {
     char *fname = NULL;
     char **url = NULL;
     int nurls = 0;
-    char **Uurl = NULL;
-    int nUurls = 0;
     char *outfname = NULL;
     FILE *fout;
     char *infname = NULL;
@@ -178,7 +176,7 @@ int main(int argc, char **argv) {
 
     {   /* Options parsing */
         int opt;
-        while ((opt = getopt(argc, argv, "b:o:f:u:U:v")) != -1) {
+        while ((opt = getopt(argc, argv, "b:o:f:u:v")) != -1) {
             switch (opt) {
             case 'o':
                 if (outfname) {
@@ -205,10 +203,6 @@ int main(int argc, char **argv) {
             case 'u':
                 url = realloc(url, (nurls + 1) * sizeof *url);
                 url[nurls++] = optarg;
-                break;
-            case 'U':
-                Uurl = realloc(Uurl, (nUurls + 1) * sizeof *Uurl);
-                Uurl[nUurls++] = optarg;
                 break;
             case 'v':
                 verbose++;
@@ -324,8 +318,6 @@ int main(int argc, char **argv) {
         int i;
         for (i = 0; i < nurls; i++)
             fprintf(fout, "URL: %s\n", url[i]);
-        for (i = 0; i < nUurls; i++)
-            fprintf(fout, "URL: %s\n", Uurl[i]);
     }
     if (nurls == 0 && infname) {
         /* Assume that we are in the public dir, and use relative paths.

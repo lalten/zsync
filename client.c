@@ -451,6 +451,8 @@ int main(int argc, char **argv) {
             if (!dup)
                 read_seed_file(zs, seedfiles[i]);
         }
+        free(seedfiles);
+        
         /* Show how far that got us */
         zsync_progress(zs, &local_used, NULL);
 

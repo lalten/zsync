@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
     {   /* Option parsing */
         int opt;
 
-        while ((opt = getopt(argc, argv, "o:i:Vsqu:")) != -1) {
+        while ((opt = getopt(argc, argv, "o:i:qu:")) != -1) {
             switch (opt) {
             case 'o':
                 free(filename);
@@ -379,12 +379,6 @@ int main(int argc, char **argv) {
             case 'i':
                 seedfiles = (char **) append_ptrlist(&nseedfiles, (void **) seedfiles, optarg);
                 break;
-            case 'V':
-                printf(PACKAGE " v" VERSION " (compiled " __DATE__ " " __TIME__
-                       ")\n" "By Colin Phipps <cph@moria.org.uk>\n"
-                       "Published under the Artistic License v2, see the COPYING file for details.\n");
-                exit(0);
-            case 's':
             case 'q':
                 no_progress = 1;
                 break;

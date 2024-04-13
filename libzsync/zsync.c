@@ -150,9 +150,10 @@ struct zsync_state *zsync_begin(FILE * f) {
                 }
             }
             else if (!strcmp(buf, "Min-Version")) {
-                if (strcmp(p, VERSION) > 0) {
+                // The zsync file format we use is the one from original zsync 0.6.2
+                if (strcmp(p, "0.6.2") > 0) {
                     fprintf(stderr,
-                            "control file indicates that zsync-%s or better is required\n",
+                            "zsync3 supports only up to zsync 0.6.2 format, but this one requires %s or better\n",
                             p);
                     free(zs);
                     return NULL;

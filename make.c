@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
 
     {   /* Options parsing */
         int opt;
-        while ((opt = getopt(argc, argv, "b:o:f:u:U:vV")) != -1) {
+        while ((opt = getopt(argc, argv, "b:o:f:u:U:v")) != -1) {
             switch (opt) {
             case 'o':
                 if (outfname) {
@@ -213,11 +213,6 @@ int main(int argc, char **argv) {
             case 'v':
                 verbose++;
                 break;
-            case 'V':
-                printf(PACKAGE " v" VERSION " (zsyncmake compiled " __DATE__ " "
-                       __TIME__ ")\n" "By Colin Phipps <cph@moria.org.uk>\n"
-                       "Published under the Artistic License v2, see the COPYING file for details.\n");
-                exit(0);
             }
         }
 
@@ -303,7 +298,8 @@ int main(int argc, char **argv) {
     }
 
     /* Okay, start writing the zsync file */
-    fprintf(fout, "zsync: " VERSION "\n");
+    // We use original zsync 0.6.2 format
+    fprintf(fout, "zsync: 0.6.2\n");
 
     if (fname) {
         fprintf(fout, "Filename: %s\n", fname);

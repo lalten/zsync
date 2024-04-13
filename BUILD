@@ -1,10 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
-local_defines = [
-    "_XOPEN_SOURCE=700",
-    'VERSION=\\"3.0.0\\"',
-    'PACKAGE=\\"zsync\\"',
-]
+local_defines = ["_XOPEN_SOURCE=700"]
 
 cc_library(
     name = "zsglobal",

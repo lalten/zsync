@@ -1,0 +1,8 @@
+zsync: 0.6.2
+Filename: tests/files/empty
+Blocksize: 2048
+Length: 0
+Hash-Lengths: 1,2,4
+URL: http://example.com/empty
+SHA-1: da39a3ee5e6b4b0d3255bfef95601890afd80709
+

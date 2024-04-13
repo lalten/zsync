@@ -85,6 +85,7 @@ cc_binary(
         ":libzsync",
         ":zsglobal",
     ],
+    visibility = ["//visibility:public"],
 )
 
 cc_binary(
@@ -103,6 +104,7 @@ cc_binary(
         ":zsglobal",
         ":curl",
     ],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(

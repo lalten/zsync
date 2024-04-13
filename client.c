@@ -114,8 +114,9 @@ struct zsync_state *read_zsync_control_file(const char *p) {
     };
     char *buffer = NULL;
     size_t buffer_size = 0;
-    if (!curl_get(curl_options, &buffer, &buffer_size)) {
-        fprintf(stderr, "Failed to download %s\n", p);
+    int ret = curl_get(curl_options, &buffer, &buffer_size);
+    if (ret) {
+        fprintf(stderr, "curl exited %i, Failed to download %s\n", ret, p);
         exit(1);
     }
     FILE *stream = fmemopen(buffer, buffer_size, "r");
@@ -241,8 +242,9 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u) {
 
         char *buf = NULL;
         size_t buf_size = 0;
-        if (!curl_get(curl_options, &buf, &buf_size)){
-            fprintf(stderr, "Failed to download range %ld-%ld of %s\n", zoffset, zoffset+len, u);
+        int ret = curl_get(curl_options, &buf, &buf_size);
+        if (ret) {
+            fprintf(stderr, "curl exited %i, failed to download range %ld-%ld of %s\n", ret, zoffset, zoffset+len, u);
             ret = 1;
             break;
         }

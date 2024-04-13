@@ -1,5 +1,6 @@
 #include "curl.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,14 +60,15 @@ int get_curl_stdout(const char *cmd_buf, char **buf, size_t *curl_stdout_len) {
         return -1;
     }
 
-    int ret = -1;
-    if (curl_stdout) {
-        ret = WEXITSTATUS(pclose(curl_stdout));
-        if (ret) {
-            print_output_on_error(ret, cmd_buf, *buf, *curl_stdout_len);
-            free(*buf);
-            *buf = NULL;
-        }
+    int ret = pclose(curl_stdout);
+    if (ret == -1) {
+        perror("pclose(curl_stdout)");
+    }
+    ret = WEXITSTATUS(ret);
+    if (ret) {
+        print_output_on_error(ret, cmd_buf, *buf, *curl_stdout_len);
+        free(*buf);
+        *buf = NULL;
     }
     return ret;
 }

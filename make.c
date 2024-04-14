@@ -17,23 +17,23 @@
 
 #include "zsglobal.h"
 
+#include <libgen.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <libgen.h>
-#include <math.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <arpa/inet.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
+#include "format_string.h"
 #include "librcksum/rcksum.h"
 #include "libzsync/sha1.h"
-#include "format_string.h"
 
 /* We're only doing one file per run, so these are global state for the current
  * file being processed */
@@ -45,7 +45,7 @@ off_t len = 0;
 int verbose = 0;
 
 /* stream_error(function, stream) - Exit with IO-related error message */
-void __attribute__ ((noreturn)) stream_error(const char *func, FILE * stream) {
+void __attribute__((noreturn)) stream_error(const char *func, FILE *stream) {
     fprintf(stderr, "%s: %s\n", func, strerror(ferror(stream)));
     exit(2);
 }
@@ -53,7 +53,7 @@ void __attribute__ ((noreturn)) stream_error(const char *func, FILE * stream) {
 /* write_block_sums(buffer[], num_bytes, output_stream)
  * Given one block of data, calculate the checksums for this block and write
  * them (as raw bytes) to the given output stream */
-static void write_block_sums(unsigned char *buf, size_t got, FILE * f) {
+static void write_block_sums(unsigned char *buf, size_t got, FILE *f) {
     struct rsum r;
     unsigned char checksum[CHECKSUM_SIZE];
 
@@ -78,7 +78,7 @@ static void write_block_sums(unsigned char *buf, size_t got, FILE * f) {
  * Reads the data stream and writes to the zsync stream the blocksums for the
  * given data.
  */
-void read_stream_write_blocksums(FILE * fin, FILE * fout) {
+void read_stream_write_blocksums(FILE *fin, FILE *fout) {
     unsigned char *buf = malloc(blocksize);
 
     if (!buf) {
@@ -90,13 +90,13 @@ void read_stream_write_blocksums(FILE * fin, FILE * fout) {
         int got = fread(buf, 1, blocksize, fin);
 
         if (got > 0) {
-             /* The SHA-1 sum, unlike our internal block-based sums, is on the whole file and nothing else - no padding */
+            /* The SHA-1 sum, unlike our internal block-based sums, is on the whole file and nothing else - no padding
+             */
             SHA1Update(&shactx, buf, got);
 
             write_block_sums(buf, got, fout);
             len += got;
-        }
-        else {
+        } else {
             if (ferror(fin))
                 stream_error("fread", fin);
         }
@@ -107,7 +107,7 @@ void read_stream_write_blocksums(FILE * fin, FILE * fout) {
 /* fcopy(instream, outstream)
  * Copies data from one stream to the other until EOF on the input.
  */
-void fcopy(FILE * fin, FILE * fout) {
+void fcopy(FILE *fin, FILE *fout) {
     unsigned char buf[4096];
     size_t len;
 
@@ -128,12 +128,13 @@ void fcopy(FILE * fin, FILE * fout) {
  * stripping the hashes down to the desired lengths specified by the last 2
  * parameters.
  */
-void fcopy_hashes(FILE * fin, FILE * fout, size_t rsum_bytes, size_t hash_bytes) {
+void fcopy_hashes(FILE *fin, FILE *fout, size_t rsum_bytes, size_t hash_bytes) {
     unsigned char buf[20];
     size_t len;
 
     while ((len = fread(buf, 1, sizeof(buf), fin)) > 0) {
-        /* write trailing rsum_bytes of the rsum (trailing because the second part of the rsum is more useful in practice for hashing), and leading checksum_bytes of the checksum */
+        /* write trailing rsum_bytes of the rsum (trailing because the second part of the rsum is more useful in
+         * practice for hashing), and leading checksum_bytes of the checksum */
         if (fwrite(buf + 4 - rsum_bytes, 1, rsum_bytes, fout) < rsum_bytes)
             break;
         if (fwrite(buf + 4, 1, hash_bytes, fout) < hash_bytes)
@@ -149,7 +150,7 @@ void fcopy_hashes(FILE * fin, FILE * fout, size_t rsum_bytes, size_t hash_bytes)
 
 /* len = get_len(stream)
  * Returns the length of the file underlying this stream */
-off_t get_len(FILE * f) {
+off_t get_len(FILE *f) {
     struct stat s;
 
     if (fstat(fileno(f), &s) == -1)
@@ -176,7 +177,7 @@ int main(int argc, char **argv) {
     /* Open temporary file */
     FILE *tf = tmpfile();
 
-    {   /* Options parsing */
+    { /* Options parsing */
         int opt;
         while ((opt = getopt(argc, argv, "b:o:f:u:vM")) != -1) {
             switch (opt) {
@@ -197,8 +198,7 @@ int main(int argc, char **argv) {
             case 'b':
                 blocksize = atoi(optarg);
                 if ((blocksize & (blocksize - 1)) != 0) {
-                    fprintf(stderr,
-                            "blocksize must be a power of 2 (512, 1024, 2048, ...)\n");
+                    fprintf(stderr, "blocksize must be a power of 2 (512, 1024, 2048, ...)\n");
                     exit(2);
                 }
                 break;
@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
                 exit(2);
             }
 
-            if (set_mtime) {   /* Get mtime if available */
+            if (set_mtime) { /* Get mtime if available */
                 struct stat st;
                 if (fstat(fileno(instream), &st) == 0) {
                     mtime = st.st_mtime;
@@ -235,8 +235,7 @@ int main(int argc, char **argv) {
             /* Use supplied filename as the target filename */
             if (!fname)
                 fname = basename(argv[optind]);
-        }
-        else {
+        } else {
             instream = stdin;
         }
     }
@@ -251,7 +250,7 @@ int main(int argc, char **argv) {
     SHA1Init(&shactx);
     read_stream_write_blocksums(instream, tf);
 
-    {   /* Decide how long a rsum hash and checksum hash per block we need for this file */
+    { /* Decide how long a rsum hash and checksum hash per block we need for this file */
         seq_matches = 1;
         rsum_len = ceil(((log(len) + log(blocksize)) / log(2) - 8.6) / 8);
         /* For large files, the optimum weak checksum size can be more than
@@ -270,10 +269,8 @@ int main(int argc, char **argv) {
         rsum_len = max(2, rsum_len);
 
         /* Now the checksum length; min of two calculations */
-        checksum_len = max(ceil(
-                (20 + (log(len) + log(1 + len / blocksize)) / log(2))
-                / seq_matches / 8),
-                ceil((20 + log(1 + len / blocksize) / log(2)) / 8));
+        checksum_len = max(ceil((20 + (log(len) + log(1 + len / blocksize)) / log(2)) / seq_matches / 8),
+                           ceil((20 + log(1 + len / blocksize) / log(2)) / 8));
 
         /* Keep checksum_len within 4-16 bytes */
         checksum_len = min(16, max(4, checksum_len));
@@ -292,8 +289,7 @@ int main(int argc, char **argv) {
             exit(2);
         }
         free(outfname);
-    }
-    else {
+    } else {
         fout = stdout;
     }
 
@@ -310,17 +306,15 @@ int main(int argc, char **argv) {
             if (gmtime_r(&mtime, &mtime_tm) != NULL) {
                 if (strftime(buf, sizeof buf, "%a, %d %b %Y %H:%M:%S %z", &mtime_tm) > 0)
                     fprintf(fout, "MTime: %s\n", buf);
-            }
-            else {
+            } else {
                 fprintf(stderr, "error converting %ld to struct tm\n", mtime);
             }
         }
     }
     fprintf(fout, "Blocksize: " SIZE_T_PF "\n", blocksize);
-    fprintf(fout, "Length: " OFF_T_PF "\n", (intmax_t) len);
-    fprintf(fout, "Hash-Lengths: %d,%d,%d\n", seq_matches, rsum_len,
-            checksum_len);
-    {                           /* Write URLs */
+    fprintf(fout, "Length: " OFF_T_PF "\n", (intmax_t)len);
+    fprintf(fout, "Hash-Lengths: %d,%d,%d\n", seq_matches, rsum_len, checksum_len);
+    { /* Write URLs */
         int i;
         for (i = 0; i < nurls; i++)
             fprintf(fout, "URL: %s\n", url[i]);
@@ -329,12 +323,14 @@ int main(int argc, char **argv) {
         /* Assume that we are in the public dir, and use relative paths.
          * Look for an uncompressed version and add a URL for that to if appropriate. */
         fprintf(fout, "URL: %s\n", infname);
-        fprintf(stderr,
-                "No URL given, so I am including a relative URL in the .zsync file - you must keep the file being served and the .zsync in the same public directory. Use -u %s to get this same result without this warning.\n",
-                infname);
+        fprintf(
+            stderr,
+            "No URL given, so I am including a relative URL in the .zsync file - you must keep the file being served "
+            "and the .zsync in the same public directory. Use -u %s to get this same result without this warning.\n",
+            infname);
     }
 
-    {   /* Write out SHA1 checksum of the entire file */
+    { /* Write out SHA1 checksum of the entire file */
         unsigned char digest[SHA1_DIGEST_LENGTH];
         unsigned int i;
 

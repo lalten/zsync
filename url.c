@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -18,12 +18,12 @@
 
 #include "zsglobal.h"
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "url.h"
 
-const char http_scheme[] = { "http://" };
+const char http_scheme[] = {"http://"};
 
 /* path_str = get_http_host_port(url_str, &host, host_len, &port_str)
  * For the given url_str, returns:
@@ -39,10 +39,10 @@ char *get_http_host_port(const char *url, char *hostn, int hnlen, char **port) {
     if (memcmp(url, http_scheme, strlen(http_scheme)))
         return NULL;
 
-    q = (char *) url + strlen(http_scheme);
+    q = (char *)url + strlen(http_scheme);
 
     p = strchr(q, ':');
-    if (p) {                    /* if : is after the first /, we have looked too far ahead */
+    if (p) { /* if : is after the first /, we have looked too far ahead */
         char *r = strchr(q, '/');
         if (r && r < p)
             p = NULL;
@@ -64,7 +64,7 @@ char *get_http_host_port(const char *url, char *hostn, int hnlen, char **port) {
         size_t l;
         q = p;
         p = strchr(p, '/');
-        l = p ? (size_t) (p - q - 1) : strlen(q) - 1;
+        l = p ? (size_t)(p - q - 1) : strlen(q) - 1;
         *port = malloc(l + 1);
         if (!*port)
             return NULL;
@@ -79,7 +79,7 @@ char *get_http_host_port(const char *url, char *hostn, int hnlen, char **port) {
 /* abs_url_str = make_url_absolute(base_str, url_str)
  * Returns an absolute version of url_str relative to base_str, as a malloced
  * string. Or NULL on error. */
-char * __attribute__ ((pure)) make_url_absolute(const char *base, const char *url) {
+char *__attribute__((pure)) make_url_absolute(const char *base, const char *url) {
     if (is_url_absolute(url))
         return strdup(url);
 
@@ -98,9 +98,9 @@ char * __attribute__ ((pure)) make_url_absolute(const char *base, const char *ur
         if (!p || p[1] != '/' || p[2] != '/')
             return NULL;
         p = strchr(p + 3, '/');
-        if (!p)    /* We have a http://hostname URL (no trailing / or path) */
+        if (!p) /* We have a http://hostname URL (no trailing / or path) */
             l = strlen(base);
-        else       /* http://hostname/... , we want just http://hostname */
+        else /* http://hostname/... , we want just http://hostname */
             l = p - base;
 
         /* assert */
@@ -128,7 +128,8 @@ char * __attribute__ ((pure)) make_url_absolute(const char *base, const char *ur
             p = base + strlen(base);
 
         /* Find the last / in the path part */
-        for (q = p; q > base && *q != '/'; q--);
+        for (q = p; q > base && *q != '/'; q--)
+            ;
         if (*q != '/')
             return NULL;
 
@@ -145,9 +146,9 @@ char * __attribute__ ((pure)) make_url_absolute(const char *base, const char *ur
  * Returns 0 if the supplied string is not an absolute URL.
  * Returns the number of characters in the URL scheme if it is.
  */
-static const char special[] = { ":/?" };
+static const char special[] = {":/?"};
 
-int __attribute__ ((pure)) is_url_absolute(const char *url) {
+int __attribute__((pure)) is_url_absolute(const char *url) {
     /* find end of first no-special-URL-characters part of the string */
     int n = strcspn(url, special);
 

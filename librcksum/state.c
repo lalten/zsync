@@ -5,8 +5,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -25,18 +25,18 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "rcksum.h"
 #include "internal.h"
+#include "rcksum.h"
 
 /* rcksum_init(num_blocks, block_size, rsum_bytes, checksum_bytes, require_consecutive_matches)
  * Creates and returns an rcksum_state with the given properties
  */
-struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize,
-                                 int rsum_bytes, unsigned int checksum_bytes,
+struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_bytes, unsigned int checksum_bytes,
                                  int require_consecutive_matches) {
     /* Allocate memory for the object */
     struct rcksum_state *z = malloc(sizeof(struct rcksum_state));
-    if (z == NULL) return NULL;
+    if (z == NULL)
+        return NULL;
 
     /* Enter supplied properties. */
     z->blocksize = blocksize;
@@ -65,15 +65,13 @@ struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize,
     z->rsum_hash = NULL;
     z->bithash = NULL;
 
-    if (!(z->blocksize & (z->blocksize - 1)) && z->filename != NULL
-            && z->blocks) {
+    if (!(z->blocksize & (z->blocksize - 1)) && z->filename != NULL && z->blocks) {
         /* Create temporary file */
         z->fd = mkstemp(z->filename);
         if (z->fd == -1) {
             perror("open");
-        }
-        else {
-            {   /* Calculate bit-shift for blocksize */
+        } else {
+            { /* Calculate bit-shift for blocksize */
                 int i;
                 for (i = 0; i < 32; i++)
                     if (z->blocksize == (1u << i)) {
@@ -82,9 +80,7 @@ struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize,
                     }
             }
 
-            z->blockhashes =
-                malloc(sizeof(z->blockhashes[0]) *
-                        (z->blocks + z->seq_matches));
+            z->blockhashes = malloc(sizeof(z->blockhashes[0]) * (z->blocks + z->seq_matches));
             if (z->blockhashes != NULL)
                 return z;
 
@@ -130,11 +126,10 @@ void rcksum_end(struct rcksum_state *z) {
     free(z->rsum_hash);
     free(z->blockhashes);
     free(z->bithash);
-    free(z->ranges);            // Should be NULL already
+    free(z->ranges); // Should be NULL already
 #ifdef DEBUG
-    fprintf(stderr, "hashhit %lld, weakhit %d, checksummed %d, stronghit %d\n",
-            z->stats.hashhit, z->stats.weakhit, z->stats.checksummed,
-            z->stats.stronghit);
+    fprintf(stderr, "hashhit %lld, weakhit %d, checksummed %d, stronghit %d\n", z->stats.hashhit, z->stats.weakhit,
+            z->stats.checksummed, z->stats.stronghit);
 #endif
     free(z);
 }

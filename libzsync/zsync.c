@@ -30,23 +30,23 @@
  */
 #include "zsglobal.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <string.h>
-#include <ctype.h>
+#include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <arpa/inet.h>
 
 #include "librcksum/rcksum.h"
-#include "zsync.h"
 #include "sha1.h"
+#include "zsync.h"
 
 /* Probably we really want a table of checksum methods here. But I've only
  * implemented SHA1 so this is it for now. */
-static const char ckmeth_sha1[] = { "SHA-1" };
+static const char ckmeth_sha1[] = {"SHA-1"};
 
 /****************************************************************************
  *
@@ -58,11 +58,11 @@ static const char ckmeth_sha1[] = { "SHA-1" };
  * Also holds all the other misc data from the .zsync file.
  */
 struct zsync_state {
-    struct rcksum_state *rs;    /* rsync algorithm state, with block checksums and
-                                 * holding the in-progress local version of the target */
-    off_t filelen;              /* Length of the target file */
-    int blocks;                 /* Number of blocks in the target */
-    size_t blocksize;           /* Blocksize */
+    struct rcksum_state *rs; /* rsync algorithm state, with block checksums and
+                              * holding the in-progress local version of the target */
+    off_t filelen;           /* Length of the target file */
+    int blocks;              /* Number of blocks in the target */
+    size_t blocksize;        /* Blocksize */
 
     /* Checksum of the entire file, and checksum alg */
     char *checksum;
@@ -72,19 +72,18 @@ struct zsync_state {
     char **url;
     int nurl;
 
-    char *cur_filename;         /* If we have taken the filename from rcksum, it is here */
+    char *cur_filename; /* If we have taken the filename from rcksum, it is here */
 
     /* Hints for the output file, from the .zsync */
-    char *filename;             /* The Filename: header */
+    char *filename; /* The Filename: header */
 
-    time_t mtime;               /* MTime: from the .zsync, or -1 */
+    time_t mtime; /* MTime: from the .zsync, or -1 */
 };
 
-static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
-                                int rsum_bytes, unsigned int checksum_bytes,
+static int zsync_read_blocksums(struct zsync_state *zs, FILE *f, int rsum_bytes, unsigned int checksum_bytes,
                                 int seq_matches);
 static int zsync_sha1(struct zsync_state *zs, int fh);
-static time_t parse_822(const char* ts);
+static time_t parse_822(const char *ts);
 
 /* char*[] = append_ptrlist(&num, &char[], "to add")
  * Crude data structure to store an ordered list of strings. This appends one
@@ -103,7 +102,7 @@ static char **append_ptrlist(int *n, char **p, char *a) {
 }
 
 /* Constructor */
-struct zsync_state *zsync_begin(FILE * f) {
+struct zsync_state *zsync_begin(FILE *f) {
     /* Defaults for the checksum bytes and sequential matches properties of the
      * rcksum_state. These are the defaults from versions of zsync before these
      * were variable. */
@@ -133,8 +132,7 @@ struct zsync_state *zsync_begin(FILE * f) {
             if (buf[0] == '\n')
                 break;
             l = strlen(buf) - 1;
-            while (l >= 0
-                   && (buf[l] == '\n' || buf[l] == '\r' || buf[l] == ' '))
+            while (l >= 0 && (buf[l] == '\n' || buf[l] == '\r' || buf[l] == ' '))
                 buf[l--] = 0;
 
             p = strchr(buf, ':');
@@ -148,27 +146,21 @@ struct zsync_state *zsync_begin(FILE * f) {
                     free(zs);
                     return NULL;
                 }
-            }
-            else if (!strcmp(buf, "Min-Version")) {
+            } else if (!strcmp(buf, "Min-Version")) {
                 // The zsync file format we use is the one from original zsync 0.6.2
                 if (strcmp(p, "0.6.2") > 0) {
                     fprintf(stderr,
-                            "zsync3 supports only up to zsync 0.6.2 format, but this one requires %s or better\n",
-                            p);
+                            "zsync3 supports only up to zsync 0.6.2 format, but this one requires %s or better\n", p);
                     free(zs);
                     return NULL;
                 }
-            }
-            else if (!strcmp(buf, "Length")) {
+            } else if (!strcmp(buf, "Length")) {
                 zs->filelen = atoll(p);
-            }
-            else if (!strcmp(buf, "Filename")) {
+            } else if (!strcmp(buf, "Filename")) {
                 zs->filename = strdup(p);
-            }
-            else if (!strcmp(buf, "URL")) {
+            } else if (!strcmp(buf, "URL")) {
                 zs->url = (char **)append_ptrlist(&(zs->nurl), zs->url, strdup(p));
-            }
-            else if (!strcmp(buf, "Blocksize")) {
+            } else if (!strcmp(buf, "Blocksize")) {
                 long blocksize = atol(p);
                 if (zs->blocksize & (zs->blocksize - 1)) {
                     fprintf(stderr, "nonsensical blocksize %zu\n", zs->blocksize);
@@ -176,53 +168,41 @@ struct zsync_state *zsync_begin(FILE * f) {
                     return NULL;
                 }
                 zs->blocksize = (size_t)blocksize;
-            }
-            else if (!strcmp(buf, "Hash-Lengths")) {
-                if (sscanf
-                    (p, "%d,%d,%d", &seq_matches, &rsum_bytes,
-                     &checksum_bytes) != 3 || rsum_bytes < 1 || rsum_bytes > 4
-                    || checksum_bytes < 3 || checksum_bytes > 16
-                    || seq_matches > 2 || seq_matches < 1) {
+            } else if (!strcmp(buf, "Hash-Lengths")) {
+                if (sscanf(p, "%d,%d,%d", &seq_matches, &rsum_bytes, &checksum_bytes) != 3 || rsum_bytes < 1 ||
+                    rsum_bytes > 4 || checksum_bytes < 3 || checksum_bytes > 16 || seq_matches > 2 || seq_matches < 1) {
                     fprintf(stderr, "nonsensical hash lengths line %s\n", p);
                     free(zs);
                     return NULL;
                 }
-            }
-            else if (!strcmp(buf, ckmeth_sha1)) {
+            } else if (!strcmp(buf, ckmeth_sha1)) {
                 if (strlen(p) != SHA1_DIGEST_LENGTH * 2) {
                     fprintf(stderr, "SHA-1 digest from control file is wrong length.\n");
-                }
-                else {
+                } else {
                     zs->checksum = strdup(p);
                     zs->checksum_method = ckmeth_sha1;
                 }
-            }
-            else if (!strcmp(buf, "Safe")) {
+            } else if (!strcmp(buf, "Safe")) {
                 safelines = strdup(p);
-            }
-            else if (! (strcmp(buf, "Z-Filename") || strcmp(buf, "Z-URL") || strcmp(buf, "Z-Map2") || strcmp(buf, "Recompress"))){
+            } else if (!(strcmp(buf, "Z-Filename") || strcmp(buf, "Z-URL") || strcmp(buf, "Z-Map2") ||
+                         strcmp(buf, "Recompress"))) {
                 fprintf(stderr, "%s is not supported in zsync3.\n", buf);
-            }
-            else if (!strcmp(buf, "MTime")) {
+            } else if (!strcmp(buf, "MTime")) {
                 zs->mtime = parse_822(p);
-            }
-            else if (!safelines || !strstr(safelines, buf)) {
-                fprintf(stderr,
-                        "unrecognised tag %s - you need a newer version of zsync.\n",
-                        buf);
+            } else if (!safelines || !strstr(safelines, buf)) {
+                fprintf(stderr, "unrecognised tag %s - you need a newer version of zsync.\n", buf);
                 free(zs);
                 return NULL;
             }
             if (zs->filelen && zs->blocksize)
                 zs->blocks = (zs->filelen + zs->blocksize - 1) / zs->blocksize;
-        }
-        else {
+        } else {
             fprintf(stderr, "Bad line - not a zsync file? \"%s\"\n", buf);
             free(zs);
             return NULL;
         }
     }
-    if(!zs->url) {
+    if (!zs->url) {
         fprintf(stderr, "No URL in zsync file\n");
         free(zs);
         return NULL;
@@ -247,28 +227,25 @@ struct zsync_state *zsync_begin(FILE * f) {
  * checksums.
  * rsum_bytes, checksum_bytes, seq_matches are settings for the checksums,
  * passed through to the rcksum_state. */
-static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
-                                int rsum_bytes, unsigned int checksum_bytes,
+static int zsync_read_blocksums(struct zsync_state *zs, FILE *f, int rsum_bytes, unsigned int checksum_bytes,
                                 int seq_matches) {
     /* Make the rcksum_state first */
-    if (!(zs->rs = rcksum_init(zs->blocks, zs->blocksize, rsum_bytes,
-                               checksum_bytes, seq_matches))) {
+    if (!(zs->rs = rcksum_init(zs->blocks, zs->blocksize, rsum_bytes, checksum_bytes, seq_matches))) {
         return -1;
     }
 
     /* Now read in and store the checksums */
     zs_blockid id = 0;
     for (; id < zs->blocks; id++) {
-        struct rsum r = { 0, 0 };
+        struct rsum r = {0, 0};
         unsigned char checksum[CHECKSUM_SIZE];
 
         /* Read in */
-        if (fread(((char *)&r) + 4 - rsum_bytes, rsum_bytes, 1, f) < 1
-            || fread((void *)&checksum, checksum_bytes, 1, f) < 1) {
+        if (fread(((char *)&r) + 4 - rsum_bytes, rsum_bytes, 1, f) < 1 ||
+            fread((void *)&checksum, checksum_bytes, 1, f) < 1) {
 
             /* Error - free the rcksum_state and tell the caller to bail */
-            fprintf(stderr, "short read on control file; %s\n",
-                    strerror(ferror(f)));
+            fprintf(stderr, "short read on control file; %s\n", strerror(ferror(f)));
             rcksum_end(zs->rs);
             return -1;
         }
@@ -285,11 +262,10 @@ static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
  * Parse an RFC822 date string. Returns a time_t, or -1 on failure.
  * E.g. Tue, 25 Jul 2006 20:02:17 +0000
  */
-static time_t parse_822(const char* ts) {
-    struct tm t = { 0 };
+static time_t parse_822(const char *ts) {
+    struct tm t = {0};
 
-    if (strptime(ts, "%a, %d %b %Y %H:%M:%S %z", &t) == NULL
-        && strptime(ts, "%d %b %Y %H:%M:%S %z", &t) == NULL) {
+    if (strptime(ts, "%a, %d %b %Y %H:%M:%S %z", &t) == NULL && strptime(ts, "%d %b %Y %H:%M:%S %z", &t) == NULL) {
         return -1;
     }
     return mktime(&t);
@@ -306,17 +282,13 @@ static size_t zsync_blocksize(const struct zsync_state *zs) {
 /* char* = zsync_filename(self)
  * Returns the suggested filename to be used for the final result of this
  * zsync.  Malloced string to be freed by the caller. */
-char *zsync_filename(const struct zsync_state *zs) {
-    return strdup(zs->filename);
-}
+char *zsync_filename(const struct zsync_state *zs) { return strdup(zs->filename); }
 
 /* time_t = zsync_mtime(self)
  * Returns the mtime on the original copy of the target; for the client program
  * to set the mtime of the local file to match, if it so chooses.
  * Or -1 if no mtime specified in the .zsync */
-time_t zsync_mtime(const struct zsync_state *zs) {
-    return zs->mtime;
-}
+time_t zsync_mtime(const struct zsync_state *zs) { return zs->mtime; }
 
 /* zsync_status(self)
  * Returns  0 if we have no data in the target file yet.
@@ -331,14 +303,13 @@ int zsync_status(const struct zsync_state *zs) {
         return 0;
     if (todo > 0)
         return 1;
-    return 2;                   /* TODO: more? */
+    return 2; /* TODO: more? */
 }
 
 /* zsync_progress(self, &got, &total)
  * Writes the number of bytes got, and the total to get, into the long longs.
  */
-void zsync_progress(const struct zsync_state *zs, long long *got,
-                    long long *total) {
+void zsync_progress(const struct zsync_state *zs, long long *got, long long *total) {
 
     if (got) {
         int todo = zs->blocks - rcksum_blocks_todo(zs->rs);
@@ -355,7 +326,7 @@ void zsync_progress(const struct zsync_state *zs, long long *got,
  */
 const char *const *zsync_get_urls(struct zsync_state *zs, int *n) {
     *n = zs->nurl;
-    return (const char * const *) zs->url;
+    return (const char *const *)zs->url;
 }
 
 /* zsync_needed_byte_ranges(self, &num)
@@ -363,7 +334,7 @@ const char *const *zsync_get_urls(struct zsync_state *zs, int *n) {
  * byte ranges in the given target, such that retrieving all these byte ranges would be
  * sufficient to obtain a complete copy of the target file.
  */
-off_t *zsync_needed_byte_ranges(struct zsync_state * zs, int *num) {
+off_t *zsync_needed_byte_ranges(struct zsync_state *zs, int *num) {
     int nrange;
     off_t *byterange;
     int i;
@@ -388,7 +359,7 @@ off_t *zsync_needed_byte_ranges(struct zsync_state * zs, int *num) {
         byterange[2 * i] = blrange[2 * i] * (off_t)zs->blocksize;
         byterange[2 * i + 1] = blrange[2 * i + 1] * (off_t)zs->blocksize - 1;
     }
-    free(blrange);      /* And release the blocks, we're done with them */
+    free(blrange); /* And release the blocks, we're done with them */
 
     *num = nrange;
     return byterange;
@@ -399,7 +370,7 @@ off_t *zsync_needed_byte_ranges(struct zsync_state * zs, int *num) {
  * identify any blocks of data in common with the target file. Blocks found are
  * written to our local copy of the target in progress. Progress reports if
  * progress != 0  */
-int zsync_submit_source_file(struct zsync_state *zs, FILE * f, int progress) {
+int zsync_submit_source_file(struct zsync_state *zs, FILE *f, int progress) {
     return rcksum_submit_source_file(zs->rs, f, progress);
 }
 
@@ -422,8 +393,7 @@ int zsync_rename_file(struct zsync_state *zs, const char *f) {
     if (!x) {
         free(rf);
         zs->cur_filename = strdup(f);
-    }
-    else
+    } else
         perror("rename");
 
     return x;
@@ -475,7 +445,7 @@ int zsync_complete(struct zsync_state *zs) {
 static int zsync_sha1(struct zsync_state *zs, int fh) {
     SHA1_CTX shactx;
 
-    {                           /* Do SHA1 of file contents */
+    { /* Do SHA1 of file contents */
         unsigned char buf[4096];
         int rc;
 
@@ -489,7 +459,7 @@ static int zsync_sha1(struct zsync_state *zs, int fh) {
         }
     }
 
-    {                           /* And compare result of the SHA1 with the one from the .zsync */
+    { /* And compare result of the SHA1 with the one from the .zsync */
         unsigned char digest[SHA1_DIGEST_LENGTH];
         int i;
 
@@ -535,9 +505,7 @@ char *zsync_end(struct zsync_state *zs) {
  * the target file to libzsync, to be written into our local copy. The data is
  * the given number of blocks at the given offset (must be block-aligned), data
  * in buf[].  */
-static int zsync_submit_data(struct zsync_state *zs,
-                             const unsigned char *buf, off_t offset,
-                             int blocks) {
+static int zsync_submit_data(struct zsync_state *zs, const unsigned char *buf, off_t offset, int blocks) {
     zs_blockid blstart = offset / zs->blocksize;
     zs_blockid blend = blstart + blocks - 1;
 
@@ -553,9 +521,9 @@ static int zsync_submit_data(struct zsync_state *zs,
  * This is mostly a wrapper for the zsync_state.
  */
 struct zsync_receiver {
-    struct zsync_state *zs;     /* The zsync_state that we are downloading for */
-    unsigned char *outbuf;      /* Working buffer to keep incomplete blocks of data */
-    off_t outoffset;            /* and the position in that buffer */
+    struct zsync_state *zs; /* The zsync_state that we are downloading for */
+    unsigned char *outbuf;  /* Working buffer to keep incomplete blocks of data */
+    off_t outoffset;        /* and the position in that buffer */
 };
 
 /* Constructor */
@@ -582,8 +550,7 @@ struct zsync_receiver *zsync_begin_receive(struct zsync_state *zs) {
  * Returns 0 unless there's an error (e.g. the submitted data doesn't match the
  * expected checksum for the corresponding blocks)
  */
-int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf,
-                       off_t offset, size_t len) {
+int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf, off_t offset, size_t len) {
     int ret = 0;
     size_t blocksize = zr->zs->blocksize;
 
@@ -599,13 +566,11 @@ int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf,
                 memcpy(zr->outbuf + offset % blocksize, buf, x);
             else {
                 // Pad with 0s to length.
-                memset(zr->outbuf + offset % blocksize, 0, len = x =
-                       blocksize - (offset % blocksize));
+                memset(zr->outbuf + offset % blocksize, 0, len = x = blocksize - (offset % blocksize));
             }
 
             if ((x + offset) % blocksize == 0)
-                if (zsync_submit_data
-                    (zr->zs, zr->outbuf, zr->outoffset + x - blocksize, 1))
+                if (zsync_submit_data(zr->zs, zr->outbuf, zr->outoffset + x - blocksize, 1))
                     ret = 1;
         }
         buf += x;
@@ -624,18 +589,16 @@ int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf,
         buf += w;
         len -= w;
         offset += w;
-
     }
     /* Store incomplete block */
     if (len) {
         memcpy(zr->outbuf, buf, len);
-        offset += len;          /* not needed: buf += len; len -= len; */
+        offset += len; /* not needed: buf += len; len -= len; */
     }
 
     zr->outoffset = offset;
     return ret;
 }
-
 
 /* Destructor */
 void zsync_end_receive(struct zsync_receiver *zr) {

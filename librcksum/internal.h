@@ -5,8 +5,8 @@
  *   Copyright (C) 2004,2005,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -23,7 +23,7 @@
  */
 
 struct hash_entry {
-    struct hash_entry *next;    /* next entry with the same rsum */
+    struct hash_entry *next; /* next entry with the same rsum */
     struct rsum r;
     unsigned char checksum[CHECKSUM_SIZE];
 };
@@ -35,20 +35,20 @@ struct hash_entry {
  * over data looking for matching blocks. */
 
 struct rcksum_state {
-    struct rsum r[2];           /* Current rsums */
+    struct rsum r[2]; /* Current rsums */
 
-    zs_blockid blocks;          /* Number of blocks in the target file */
-    size_t blocksize;           /* And how many bytes per block */
-    int blockshift;             /* log2(blocksize) */
-    unsigned short rsum_a_mask; /* The mask to apply to rsum values before looking up */
-    unsigned short rsum_bits;   /* # of bits of rsum data in the .zsync for each block */
+    zs_blockid blocks;              /* Number of blocks in the target file */
+    size_t blocksize;               /* And how many bytes per block */
+    int blockshift;                 /* log2(blocksize) */
+    unsigned short rsum_a_mask;     /* The mask to apply to rsum values before looking up */
+    unsigned short rsum_bits;       /* # of bits of rsum data in the .zsync for each block */
     unsigned short hash_func_shift; /* Config for the hash function */
-    unsigned int checksum_bytes; /* How many bytes of the MD4 checksum are available */
+    unsigned int checksum_bytes;    /* How many bytes of the MD4 checksum are available */
     int seq_matches;
-    unsigned int context;       /* precalculated blocksize * seq_matches */
+    unsigned int context; /* precalculated blocksize * seq_matches */
 
     /* These are used by the library. Note, not thread safe. */
-    int skip;                   /* skip forward on next submit_source_data */
+    int skip; /* skip forward on next submit_source_data */
     const struct hash_entry *rover;
 
     /* Internal; hint to rcksum_submit_source_data that it should try matching
@@ -87,8 +87,7 @@ struct rcksum_state {
 /* rcksum_state methods */
 
 /* From a hash entry, return the corresponding blockid */
-static inline zs_blockid get_HE_blockid(const struct rcksum_state *z,
-                                        const struct hash_entry *e) {
+static inline zs_blockid get_HE_blockid(const struct rcksum_state *z, const struct hash_entry *e) {
     return e - z->blockhashes;
 }
 
@@ -99,12 +98,10 @@ zs_blockid next_known_block(struct rcksum_state *rs, zs_blockid x);
 struct hash_entry *calc_hash_entry(void *data, size_t len);
 
 /* Hash the checksum values for the given hash entry and return the hash value */
-static inline unsigned calc_rhash(const struct rcksum_state *const z,
-                                  const struct hash_entry *const e) {
+static inline unsigned calc_rhash(const struct rcksum_state *const z, const struct hash_entry *const e) {
     unsigned h = e[0].r.b;
 
-    h ^= ((z->seq_matches > 1) ? e[1].r.b
-        : e[0].r.a & z->rsum_a_mask) << z->hash_func_shift;
+    h ^= ((z->seq_matches > 1) ? e[1].r.b : e[0].r.a & z->rsum_a_mask) << z->hash_func_shift;
 
     return h;
 }

@@ -16,23 +16,18 @@
 #ifndef ZSGLOBAL_H
 #define ZSGLOBAL_H
 
-
 #ifdef HAVE_CONFIG_H
-#  include "config.h"
+#include "config.h"
 #endif
 
-#if defined(__GNUC__) && defined (__OpenBSD__)
-#  define ZS_DECL_BOUNDED(x,y,z) __attribute__((__bounded__(x,y,z)))
+#if defined(__GNUC__) && defined(__OpenBSD__)
+#define ZS_DECL_BOUNDED(x, y, z) __attribute__((__bounded__(x, y, z)))
 #else
-#  define ZS_DECL_BOUNDED(x,y,z)
+#define ZS_DECL_BOUNDED(x, y, z)
 #endif /* ZS_DECL_BOUNDED */
 
-static inline unsigned min(unsigned short a, unsigned short b) {
-    return a > b ? b : a;
-}
+static inline unsigned min(unsigned short a, unsigned short b) { return a > b ? b : a; }
 
-static inline unsigned max(unsigned short a, unsigned short b) {
-    return a > b ? a : b;
-}
+static inline unsigned max(unsigned short a, unsigned short b) { return a > b ? a : b; }
 
 #endif

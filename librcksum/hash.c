@@ -24,20 +24,19 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "rcksum.h"
 #include "internal.h"
+#include "rcksum.h"
 
 #ifdef DEBUG
-#	define UNUSED_BY_NDEBUG
+#define UNUSED_BY_NDEBUG
 #else
-#	define UNUSED_BY_NDEBUG __attribute__((unused))
+#define UNUSED_BY_NDEBUG __attribute__((unused))
 #endif
 
 /* rcksum_add_target_block(self, blockid, rsum, checksum)
  * Sets the stored hash values for the given blockid to the given values.
  */
-void rcksum_add_target_block(struct rcksum_state *z, zs_blockid b,
-                             struct rsum r, void *checksum) {
+void rcksum_add_target_block(struct rcksum_state *z, zs_blockid b, struct rsum r, void *checksum) {
     if (b < z->blocks) {
         /* Get hash entry with checksums for this block */
         struct hash_entry *e = &(z->blockhashes[b]);
@@ -57,7 +56,7 @@ void rcksum_add_target_block(struct rcksum_state *z, zs_blockid b,
     }
 }
 
-static void print_hashstats(const struct rcksum_state* z UNUSED_BY_NDEBUG) {
+static void print_hashstats(const struct rcksum_state *z UNUSED_BY_NDEBUG) {
 #ifdef DEBUG
     int i;
     {
@@ -68,27 +67,26 @@ static void print_hashstats(const struct rcksum_state* z UNUSED_BY_NDEBUG) {
                 num_bits_set++;
         }
 
-        fprintf(stderr, "bithash %dKB, density %.1f%%\n",
-                (z->bithashmask+1)/(1000 * 8),
+        fprintf(stderr, "bithash %dKB, density %.1f%%\n", (z->bithashmask + 1) / (1000 * 8),
                 100.0 * num_bits_set / (z->bithashmask + 1));
     }
     {
         int hash_entries_used = 0;
         int max_depth = 0;
         for (i = 0; i < z->hashmask + 1; i++) {
-            struct hash_entry* p = z->rsum_hash[i];
-            if (!p) continue;
+            struct hash_entry *p = z->rsum_hash[i];
+            if (!p)
+                continue;
             hash_entries_used++;
             int depth;
             for (depth = 0; p; p = p->next)
                 depth++;
-            if (depth > max_depth) max_depth = depth;
+            if (depth > max_depth)
+                max_depth = depth;
         }
-        fprintf(stderr,
-                "rsum hash density: %d/%d %.1f%% (depth avg: %.1f, max: %d)\n",
-                hash_entries_used, z->hashmask+1,
-                100.0 * hash_entries_used / (z->hashmask + 1),
-                z->blocks / (float)hash_entries_used, max_depth);
+        fprintf(stderr, "rsum hash density: %d/%d %.1f%% (depth avg: %.1f, max: %d)\n", hash_entries_used,
+                z->hashmask + 1, 100.0 * hash_entries_used / (z->hashmask + 1), z->blocks / (float)hash_entries_used,
+                max_depth);
     }
 #if 0
     {   /* Print blocks on "0" hash-chain */
@@ -137,11 +135,11 @@ static void print_hashstats(const struct rcksum_state* z UNUSED_BY_NDEBUG) {
  */
 int build_hash(struct rcksum_state *z) {
     zs_blockid id;
-    int avail_bits = z->seq_matches > 1 ? min(z->rsum_bits, 16)*2 : z->rsum_bits;
+    int avail_bits = z->seq_matches > 1 ? min(z->rsum_bits, 16) * 2 : z->rsum_bits;
     int hash_bits = avail_bits;
 
     /* Pick a hash size that is a power of two and gives a load factor of <1 */
-    while (((1U << (hash_bits-1)) > (unsigned int) z->blocks) && hash_bits > 5)
+    while (((1U << (hash_bits - 1)) > (unsigned int)z->blocks) && hash_bits > 5)
         hash_bits--;
 
     /* Allocate hash based on rsum */
@@ -229,10 +227,8 @@ void remove_block_from_hash(struct rcksum_state *z, zs_blockid id) {
             }
             *p = (*p)->next;
             return;
-        }
-        else {
+        } else {
             p = &((*p)->next);
         }
     }
 }
-

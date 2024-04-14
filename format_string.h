@@ -17,4 +17,3 @@
 
 #define SIZE_T_PF "%zu"
 #define OFF_T_PF "%jd"
-

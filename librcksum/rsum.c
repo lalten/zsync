@@ -5,8 +5,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -20,29 +20,32 @@
 
 #include "zsglobal.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include "internal.h"
 #include "md4.h"
 #include "rcksum.h"
-#include "internal.h"
 /* TODO: decide how to handle progress; this is now being used by the client
  * and by the library, which is ugly. */
 #include "../progress.h"
 
-#define UPDATE_RSUM(a, b, oldc, newc, bshift) do { (a) += ((unsigned char)(newc)) - ((unsigned char)(oldc)); (b) += (a) - ((oldc) << (bshift)); } while (0)
+#define UPDATE_RSUM(a, b, oldc, newc, bshift)                                                                          \
+    do {                                                                                                               \
+        (a) += ((unsigned char)(newc)) - ((unsigned char)(oldc));                                                      \
+        (b) += (a) - ((oldc) << (bshift));                                                                             \
+    } while (0)
 
 /* rcksum_calc_rsum_block(data, data_len)
  * Calculate the rsum for a single block of data. */
 /* Note int len here, not size_t, because the compiler is stupid and expands
  * the 32bit size_t to 64bit inside the inner loop. */
-struct rsum __attribute__((pure))
-rcksum_calc_rsum_block(const unsigned char *data, size_t len) {
+struct rsum __attribute__((pure)) rcksum_calc_rsum_block(const unsigned char *data, size_t len) {
     register unsigned short a = 0;
     register unsigned short b = 0;
     size_t i;
@@ -53,15 +56,14 @@ rcksum_calc_rsum_block(const unsigned char *data, size_t len) {
         b += a;
     }
     {
-        struct rsum r = { a, b };
+        struct rsum r = {a, b};
         return r;
     }
 }
 
 /* rcksum_calc_checksum(checksum_buf, data, data_len)
  * Returns the MD4 checksum (in checksum_buf) of the given data block */
-void rcksum_calc_checksum(unsigned char *c, const unsigned char *data,
-                          size_t len) {
+void rcksum_calc_checksum(unsigned char *c, const unsigned char *data, size_t len) {
     MD4_CTX ctx;
     MD4Init(&ctx);
     MD4Update(&ctx, data, len);
@@ -81,10 +83,9 @@ ssize_t pwrite(int d, const void *buf, size_t nbytes, off_t offset) {
 /* write_blocks(rcksum_state, buf, startblock, endblock)
  * Writes the block range (inclusive) from the supplied buffer to our
  * under-construction output file */
-static void write_blocks(struct rcksum_state *z, const unsigned char *data,
-                         zs_blockid bfrom, zs_blockid bto) {
-    off_t len = ((off_t) (bto - bfrom + 1)) << z->blockshift;
-    off_t offset = ((off_t) bfrom) << z->blockshift;
+static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_blockid bfrom, zs_blockid bto) {
+    off_t len = ((off_t)(bto - bfrom + 1)) << z->blockshift;
+    off_t offset = ((off_t)bfrom) << z->blockshift;
 
     while (len) {
         size_t l = (size_t)len;
@@ -92,7 +93,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data,
 
         /* On some platforms, the bytes-to-write could be more than pwrite(2)
          * will accept. Write in blocks of 2^31 bytes in that case. */
-        if ((off_t) l < len)
+        if ((off_t)l < len)
             l = 0x8000000;
 
         /* Write */
@@ -104,17 +105,17 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data,
 
         /* Keep track of any data still to do */
         len -= rc;
-        if (len) {              /* More to write */
+        if (len) { /* More to write */
             data += rc;
             offset += rc;
         }
     }
 
-    {   /* Having written those blocks, discard them from the rsum hashes (as
-         * we don't need to identify data for those blocks again, and this may
-         * speed up lookups (in particular if there are lots of identical
-         * blocks), and add the written blocks to the record of blocks that we
-         * have received and stored the data for */
+    { /* Having written those blocks, discard them from the rsum hashes (as
+       * we don't need to identify data for those blocks again, and this may
+       * speed up lookups (in particular if there are lots of identical
+       * blocks), and add the written blocks to the record of blocks that we
+       * have received and stored the data for */
         int id;
         for (id = bfrom; id <= bto; id++) {
             remove_block_from_hash(z, id);
@@ -126,8 +127,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data,
 /* rcksum_read_known_data(self, buf, offset, len)
  * Read back data from the working output - read len bytes from offset into
  * buf[] (which must be at least len bytes long) */
-ssize_t rcksum_read_known_data(struct rcksum_state *z, unsigned char *buf,
-                               off_t offset, size_t len) {
+ssize_t rcksum_read_known_data(struct rcksum_state *z, unsigned char *buf, off_t offset, size_t len) {
     ssize_t rc = pread(z->fd, buf, len, offset);
     return rc;
 }
@@ -141,8 +141,7 @@ ssize_t rcksum_read_known_data(struct rcksum_state *z, unsigned char *buf,
  * blocks in the output file (i.e. you've downloaded them from a real copy of
  * the target).
  */
-int rcksum_submit_blocks(struct rcksum_state *const z, const unsigned char *data,
-                         zs_blockid bfrom, zs_blockid bto) {
+int rcksum_submit_blocks(struct rcksum_state *const z, const unsigned char *data, zs_blockid bfrom, zs_blockid bto) {
     zs_blockid x;
     unsigned char md4sum[CHECKSUM_SIZE];
 
@@ -153,10 +152,9 @@ int rcksum_submit_blocks(struct rcksum_state *const z, const unsigned char *data
 
     /* Check each block */
     for (x = bfrom; x <= bto; x++) {
-        rcksum_calc_checksum(&md4sum[0], data + ((x - bfrom) << z->blockshift),
-                             z->blocksize);
+        rcksum_calc_checksum(&md4sum[0], data + ((x - bfrom) << z->blockshift), z->blocksize);
         if (memcmp(&md4sum, &(z->blockhashes[x].checksum[0]), z->checksum_bytes)) {
-            if (x > bfrom)      /* Write any good blocks we did get */
+            if (x > bfrom) /* Write any good blocks we did get */
                 write_blocks(z, data, bfrom, x - 1);
             return -1;
         }
@@ -178,10 +176,8 @@ int rcksum_submit_blocks(struct rcksum_state *const z, const unsigned char *data
  *
  * Return the number of blocks successfully obtained.
  */
-static int check_checksums_on_hash_chain(struct rcksum_state *const z,
-                                         const struct hash_entry *e,
-                                         const unsigned char *data,
-                                         int onlyone) {
+static int check_checksums_on_hash_chain(struct rcksum_state *const z, const struct hash_entry *e,
+                                         const unsigned char *data, int onlyone) {
     unsigned char md4sum[2][CHECKSUM_SIZE];
     signed int done_md4 = -1;
     int got_blocks = 0;
@@ -212,9 +208,7 @@ static int check_checksums_on_hash_chain(struct rcksum_state *const z,
 
         id = get_HE_blockid(z, e);
 
-        if (!onlyone && z->seq_matches > 1
-            && (e[1].r.a != (z->r[1].a & z->rsum_a_mask)
-                || e[1].r.b != z->r[1].b)) {
+        if (!onlyone && z->seq_matches > 1 && (e[1].r.a != (z->r[1].a & z->rsum_a_mask) || e[1].r.b != z->r[1].b)) {
             continue;
         }
 
@@ -231,17 +225,13 @@ static int check_checksums_on_hash_chain(struct rcksum_state *const z,
             do {
                 /* We only calculate the MD4 once we need it; but need not do so twice */
                 if (check_md4 > done_md4) {
-                    rcksum_calc_checksum(&md4sum[check_md4][0],
-                                         data + z->blocksize * check_md4,
-                                         z->blocksize);
+                    rcksum_calc_checksum(&md4sum[check_md4][0], data + z->blocksize * check_md4, z->blocksize);
                     done_md4 = check_md4;
                     z->stats.checksummed++;
                 }
 
                 /* Now check the strong checksum for this block */
-                if (memcmp(&md4sum[check_md4],
-                     e[check_md4].checksum,
-                     z->checksum_bytes))
+                if (memcmp(&md4sum[check_md4], e[check_md4].checksum, z->checksum_bytes))
                     ok = 0;
 
                 check_md4++;
@@ -262,9 +252,9 @@ static int check_checksums_on_hash_chain(struct rcksum_state *const z,
 
                     /* Save state for this run of matches */
                     z->next_match = &(z->blockhashes[id + check_md4]);
-                    if (!onlyone) z->next_known = next_known;
-                }
-                else {
+                    if (!onlyone)
+                        z->next_known = next_known;
+                } else {
                     /* We've reached the EOF, or data we already know. Just
                      * write out the blocks we don't know, and that's the end
                      * of this run of matches. */
@@ -289,21 +279,20 @@ static int check_checksums_on_hash_chain(struct rcksum_state *const z,
  * offset in the whole source stream otherwise.
  *
  * Returns the number of blocks in the target file that we obtained as a result
- * of reading this buffer. 
+ * of reading this buffer.
  *
  * IMPLEMENTATION:
  * We maintain the following state:
  * skip - the number of bytes to skip next time we enter rcksum_submit_source_data
- *        e.g. because we've just matched a block and the forward jump takes 
+ *        e.g. because we've just matched a block and the forward jump takes
  *        us past the end of the buffer
  * r[0] - rolling checksum of the first blocksize bytes of the buffer
  * r[1] - rolling checksum of the next blocksize bytes of the buffer (if seq_matches > 1)
  */
-int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
-                              size_t len, off_t offset) {
+int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data, size_t len, off_t offset) {
     /* The window in data[] currently being considered is [x, x+bs) */
     int x = 0;
-    int got_blocks = 0;  /* Count the number of useful data blocks found. */
+    int got_blocks = 0; /* Count the number of useful data blocks found. */
 
     /* z->context doesn't vary during an invocation; help the compiler by
      * putting it into a local variable here. */
@@ -311,8 +300,7 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
 
     if (offset) {
         x = z->skip;
-    }
-    else {
+    } else {
         z->next_match = NULL;
     }
 
@@ -335,7 +323,7 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
         /* # of blocks to advance if thismatch > 0. Can be less than
          * thismatch as thismatch could be N*blocks_matched, if a block was
          * duplicated to multiple locations in the output file. */
-        int blocks_matched = 0; 
+        int blocks_matched = 0;
 
         /* Pull some invariants into locals, because the compiler doesn't
          * know they are invariants. */
@@ -378,11 +366,10 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
                 /* Do a hash table lookup - first in the bithash (fast negative
                  * check) and then in the rsum hash */
                 unsigned hash = z->r[0].b;
-                hash ^= ((seq_matches > 1) ? z->r[1].b
-                        : z->r[0].a & z->rsum_a_mask) << z->hash_func_shift;
+                hash ^= ((seq_matches > 1) ? z->r[1].b : z->r[0].a & z->rsum_a_mask) << z->hash_func_shift;
 
-                if ((z->bithash[(hash & z->bithashmask) >> 3] & (1 << (hash & 7))) != 0
-                    && (e = z->rsum_hash[hash & z->hashmask]) != NULL) {
+                if ((z->bithash[(hash & z->bithashmask) >> 3] & (1 << (hash & 7))) != 0 &&
+                    (e = z->rsum_hash[hash & z->hashmask]) != NULL) {
 
                     /* Okay, we have a hash hit. Follow the hash chain and
                      * check our block against all the entries. */
@@ -443,10 +430,11 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
 /* off_t get_file_size(FILE*)
  * Returns the size of the given file, if available. 0 otherwise.
  */
-static off_t get_file_size(FILE* f) {
+static off_t get_file_size(FILE *f) {
     struct stat st;
     int fd = fileno(f);
-    if (fd == -1) return 0;
+    if (fd == -1)
+        return 0;
     if (fstat(fd, &st) == -1) {
         perror("fstat");
         return 0;
@@ -459,7 +447,7 @@ static off_t get_file_size(FILE* f) {
  * identify any blocks of data in common with the target file. Blocks found are
  * written to our working target output. Progress reports if progress != 0
  */
-int rcksum_submit_source_file(struct rcksum_state *z, FILE * f, int progress) {
+int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress) {
     /* Track progress */
     int got_blocks = 0;
     off_t in = 0;
@@ -511,7 +499,7 @@ int rcksum_submit_source_file(struct rcksum_state *z, FILE * f, int progress) {
                 end_progress(p, 0);
             return got_blocks;
         }
-        if (feof(f)) {          /* 0 pad to complete a block */
+        if (feof(f)) { /* 0 pad to complete a block */
             memset(buf + len, 0, z->context);
             len += z->context;
         }

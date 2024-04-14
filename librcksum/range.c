@@ -5,8 +5,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -24,8 +24,8 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "rcksum.h"
 #include "internal.h"
+#include "rcksum.h"
 
 /* r = range_before_block(self, x)
  * This determines which of the existing known ranges x falls in.
@@ -36,18 +36,21 @@
  * ...
  * numranges if it is after the last range
  */
-static int range_before_block(const struct rcksum_state* rs, zs_blockid x) {
+static int range_before_block(const struct rcksum_state *rs, zs_blockid x) {
     /* Lowest number and highest number block that it could be inside (0 based) */
-    register int min = 0, max = rs->numranges-1;
+    register int min = 0, max = rs->numranges - 1;
 
     /* By bisection */
-    for (; min<=max;) {
+    for (; min <= max;) {
         /* Range number to compare against */
-        register int r = (max+min)/2;
+        register int r = (max + min) / 2;
 
-        if (x > rs->ranges[2*r+1]) min = r+1;  /* After range r */
-        else if (x < rs->ranges[2*r]) max = r-1;/* Before range r */
-            else return -1;                     /* In range r */
+        if (x > rs->ranges[2 * r + 1])
+            min = r + 1; /* After range r */
+        else if (x < rs->ranges[2 * r])
+            max = r - 1; /* Before range r */
+        else
+            return -1; /* In range r */
     }
 
     /* If we reach here, we know min = max + 1 and we were below range max+1
@@ -66,20 +69,16 @@ void add_to_ranges(struct rcksum_state *rs, zs_blockid x) {
 
     if (r == -1) {
         /* Already have this block */
-    }
-    else {
+    } else {
         rs->gotblocks++;
 
         /* If between two ranges and exactly filling the hole between them,
          * merge them */
-        if (r > 0 && r < rs->numranges
-            && rs->ranges[2 * (r - 1) + 1] == x - 1
-            && rs->ranges[2 * r] == x + 1) {
+        if (r > 0 && r < rs->numranges && rs->ranges[2 * (r - 1) + 1] == x - 1 && rs->ranges[2 * r] == x + 1) {
 
             // This block fills the gap between two areas that we have got completely. Merge the adjacent ranges
             rs->ranges[2 * (r - 1) + 1] = rs->ranges[2 * r + 1];
-            memmove(&rs->ranges[2 * r], &rs->ranges[2 * r + 2],
-                    (rs->numranges - r - 1) * sizeof(rs->ranges[0]) * 2);
+            memmove(&rs->ranges[2 * r], &rs->ranges[2 * r + 2], (rs->numranges - r - 1) * sizeof(rs->ranges[0]) * 2);
             rs->numranges--;
         }
 
@@ -94,11 +93,8 @@ void add_to_ranges(struct rcksum_state *rs, zs_blockid x) {
         }
 
         else { /* New range for this block alone */
-            rs->ranges =
-                realloc(rs->ranges,
-                        (rs->numranges + 1) * 2 * sizeof(rs->ranges[0]));
-            memmove(&rs->ranges[2 * r + 2], &rs->ranges[2 * r],
-                    (rs->numranges - r) * 2 * sizeof(rs->ranges[0]));
+            rs->ranges = realloc(rs->ranges, (rs->numranges + 1) * 2 * sizeof(rs->ranges[0]));
+            memmove(&rs->ranges[2 * r + 2], &rs->ranges[2 * r], (rs->numranges - r) * 2 * sizeof(rs->ranges[0]));
             rs->ranges[2 * r] = rs->ranges[2 * r + 1] = x;
             rs->numranges++;
         }
@@ -115,9 +111,7 @@ void add_to_ranges(struct rcksum_state *rs, zs_blockid x) {
 
 /* already_got_block
  * Return true iff blockid x of the target file is already known */
-int already_got_block(struct rcksum_state *rs, zs_blockid x) {
-    return (range_before_block(rs, x) == -1);
-}
+int already_got_block(struct rcksum_state *rs, zs_blockid x) { return (range_before_block(rs, x) == -1); }
 
 /* next_blockid = next_known_block(rs, blockid)
  * Returns the blockid of the next block which we already have data for.
@@ -134,13 +128,12 @@ zs_blockid next_known_block(struct rcksum_state *rs, zs_blockid x) {
         return rs->blocks;
     }
     /* Else return first block of next known range. */
-    return rs->ranges[2*r];
+    return rs->ranges[2 * r];
 }
 
 /* rcksum_needed_block_ranges
  * Return the block ranges needed to complete the target file */
-zs_blockid *rcksum_needed_block_ranges(const struct rcksum_state * rs, int *num,
-                                       zs_blockid from, zs_blockid to) {
+zs_blockid *rcksum_needed_block_ranges(const struct rcksum_state *rs, int *num, zs_blockid from, zs_blockid to) {
     int i, n;
     int alloc_n = 100;
     zs_blockid *r = malloc(2 * alloc_n * sizeof(zs_blockid));
@@ -162,16 +155,14 @@ zs_blockid *rcksum_needed_block_ranges(const struct rcksum_state * rs, int *num,
             continue;
 
         /* Okay, they intersect */
-        if (n == 1 && rs->ranges[2 * i] <= from) {       /* Overlaps the start of our window */
+        if (n == 1 && rs->ranges[2 * i] <= from) { /* Overlaps the start of our window */
             r[0] = rs->ranges[2 * i + 1] + 1;
-        }
-        else {
+        } else {
             /* If the last block that we still (which is the last window end -1, due
              * to half-openness) then this range just cuts the end of our window */
             if (rs->ranges[2 * i + 1] >= r[2 * n - 1] - 1) {
                 r[2 * n - 1] = rs->ranges[2 * i];
-            }
-            else {
+            } else {
                 /* In the middle of our range, split it */
                 r[2 * n] = rs->ranges[2 * i + 1] + 1;
                 r[2 * n + 1] = r[2 * n - 1];

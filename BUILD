@@ -79,13 +79,13 @@ cc_binary(
     name = "zsyncmake",
     srcs = ["make.c"],
     local_defines = local_defines,
+    visibility = ["//visibility:public"],
     deps = [
         ":format_string",
         ":librcksum",
         ":libzsync",
         ":zsglobal",
     ],
-    visibility = ["//visibility:public"],
 )
 
 cc_binary(
@@ -96,34 +96,34 @@ cc_binary(
         "url.h",
     ],
     local_defines = local_defines,
+    visibility = ["//visibility:public"],
     deps = [
+        ":curl",
         ":format_string",
         ":librcksum",
         ":libzsync",
         ":progress",
         ":zsglobal",
-        ":curl",
     ],
-    visibility = ["//visibility:public"],
 )
 
 cc_binary(
     name = "zsyncranges",
     srcs = ["zsyncranges.c"],
-    deps = [":libzsync"],
     visibility = ["//visibility:public"],
+    deps = [":libzsync"],
 )
 
 cc_library(
     name = "curl",
-    hdrs = ["curl.h"],
     srcs = ["curl.c"],
+    hdrs = ["curl.h"],
 )
 
-cc_test (
+cc_test(
     name = "curl_test",
-    timeout  = "short",
+    timeout = "short",
     srcs = ["curl_test.c"],
-    deps = [":curl"],
     data = ["curl_test.txt"],
+    deps = [":curl"],
 )

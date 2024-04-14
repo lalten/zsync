@@ -107,6 +107,13 @@ cc_binary(
     visibility = ["//visibility:public"],
 )
 
+cc_binary(
+    name = "zsyncranges",
+    srcs = ["zsyncranges.c"],
+    deps = [":libzsync"],
+    visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "curl",
     hdrs = ["curl.h"],

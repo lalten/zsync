@@ -36,9 +36,12 @@ int main(int argc, char **argv) {
     off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
     printf("[");
     for (int i = 0; i < nrange; i++) {
-        printf("%s\n  [%ld, %ld]", i ? "," : "", zbyterange[i * 2], zbyterange[i * 2 + 1]);
+        printf("[%ld,%ld]", zbyterange[i * 2], zbyterange[i * 2 + 1]);
+        if (i < nrange - 1) {
+            printf(",");
+        }
     }
-    printf("\n]\n");
+    printf("]\n");
     free(zbyterange);
     zsync_end(zs);
 

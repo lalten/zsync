@@ -13,15 +13,15 @@ diff_test(
 )
 
 zsyncfile(
-    name = "not_empty.zsync",
+    name = "loremipsum.zsync",
     blocksize = 8,
-    file = "files/not empty",
+    file = "files/loremipsum",
 )
 
 diff_test(
-    name = "not_empty_test",
-    file1 = ":not_empty.zsync",
-    file2 = "files/not_empty.zsync",
+    name = "loremipsum_test",
+    file1 = ":loremipsum.zsync",
+    file2 = "files/loremipsum.zsync",
 )
 
 zsyncfile(
@@ -34,4 +34,15 @@ diff_test(
     name = "url_test",
     file1 = ":url.zsync",
     file2 = "files/url.zsync",
+)
+
+sh_test(
+    name = "zsyncranges_test",
+    timeout = "short",
+    srcs = ["zsyncranges_test.sh"],
+    data = [
+        "files/loremipsum",
+        ":loremipsum.zsync",
+        "//:zsyncranges",
+    ],
 )

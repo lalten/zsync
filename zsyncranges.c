@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "libzsync/zsync.h"
 
@@ -43,7 +44,9 @@ int main(int argc, char **argv) {
     }
     printf("]\n");
     free(zbyterange);
-    zsync_end(zs);
+    char *temp_file = zsync_end(zs);
+    unlink(temp_file);
+    free(temp_file);
 
     exit(EXIT_SUCCESS);
 }

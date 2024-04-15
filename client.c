@@ -57,7 +57,9 @@ void read_seed_file(struct zsync_state *z, const char *fname) {
              * is part of the target file. */
             if (!no_progress)
                 fprintf(stderr, "reading seed file %s: ", fname);
-            zsync_submit_source_file(z, f, !no_progress);
+            if (zsync_submit_source_file(z, f, !no_progress) < 0) {
+                fprintf(stderr, "error reading seed file %s\n", fname);
+            }
 
             /* And close */
             if (fclose(f) != 0) {

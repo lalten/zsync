@@ -459,13 +459,13 @@ int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress) {
     register size_t bufsize = z->blocksize * 16;
     unsigned char *buf = malloc(bufsize + z->context);
     if (!buf)
-        return 0;
+        return -1;
 
     /* Build checksum hash tables ready to analyse the blocks we find */
     if (!z->rsum_hash)
         if (!build_hash(z)) {
             free(buf);
-            return 0;
+            return -1;
         }
 
     if (progress) {

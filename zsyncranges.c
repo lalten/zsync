@@ -25,9 +25,9 @@ int main(int argc, char **argv) {
         perror("fopen(seedfile)");
         exit(EXIT_FAILURE);
     }
-    int got_blocks = zsync_submit_source_file(zs, seedfile_stream, 0);
+    int num_blocks = zsync_submit_source_file(zs, seedfile_stream, 0);
     fclose(seedfile_stream);
-    if (!got_blocks) {
+    if (num_blocks < 0) {
         fprintf(stderr, "Error reading seed file\n");
         exit(EXIT_FAILURE);
     }

@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
 
     FILE *zsyncfile_stream = fopen(argv[1], "r");
     if (!zsyncfile_stream) {
-        perror("fopen(zsyncfile)");
+        perror(argv[1]);
         exit(EXIT_FAILURE);
     }
     struct zsync_state *zs = zsync_begin(zsyncfile_stream);
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 
     FILE *seedfile_stream = fopen(argv[2], "r");
     if (!seedfile_stream) {
-        perror("fopen(seedfile)");
+        perror(argv[2]);
         exit(EXIT_FAILURE);
     }
     int num_blocks = zsync_submit_source_file(zs, seedfile_stream, 0);

@@ -2,6 +2,13 @@
 
 set -euxo pipefail
 
+# File doesn't even exist yet
+if out="$(2>&1 ./zsyncranges "$(pwd)/tests/loremipsum.zsync" /invalid)"; then
+    echo "Expected failure, got: $out"
+    exit 1
+fi
+test "$out" == "/invalid: No such file or directory"
+
 # Need full file
 ranges="$(./zsyncranges "$(pwd)/tests/loremipsum.zsync" /dev/null)"
 test "$ranges" == "[[0,591]]"

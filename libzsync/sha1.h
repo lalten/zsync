@@ -9,11 +9,9 @@
 #ifndef _SHA1_H
 #define _SHA1_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <inttypes.h>
+#include "zsglobal.h"
+#include <stdint.h>
+#include <stdio.h>
 
 #define SHA1_BLOCK_LENGTH 64
 #define SHA1_DIGEST_LENGTH 20

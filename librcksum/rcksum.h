@@ -14,6 +14,8 @@
  *   COPYING file for details.
  */
 
+#pragma once
+
 /* This is the library interface. Very changeable at this stage. */
 
 #include <stdio.h>

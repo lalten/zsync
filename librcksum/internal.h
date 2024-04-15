@@ -15,6 +15,10 @@
  *   COPYING file for details.
  */
 
+#pragma once
+
+#include "rcksum.h"
+
 /* Internal data structures to the library. Not to be included by code outside librcksum. */
 
 /* Two types of checksum -

@@ -24,11 +24,12 @@ def _zsyncfile_impl(ctx):
     args += ["-u", ctx.attr.url or ctx.file.file.basename]
     args.append(ctx.file.file.path)
     ctx.actions.run(
-        inputs = [ctx.file.file],
         outputs = [out],
-        arguments = args,
+        inputs = [ctx.file.file],
         executable = ctx.executable.zsyncmake,
         tools = [ctx.executable.zsyncmake],
+        arguments = args,
+        mnemonic = "ZsyncMake",
     )
     return DefaultInfo(files = depset([out]))
 

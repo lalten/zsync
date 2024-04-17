@@ -70,16 +70,6 @@ void rcksum_calc_checksum(unsigned char *c, const unsigned char *data, size_t le
     MD4Final(c, &ctx);
 }
 
-#ifndef HAVE_PWRITE
-/* Fallback pwrite(2) implementation if needed (but not strictly complete, as
- * it moves the file pointer - we don't care). */
-ssize_t pwrite(int d, const void *buf, size_t nbytes, off_t offset) {
-    if (lseek(d, offset, SEEK_SET) == -1)
-        return -1;
-    return write(d, buf, nbytes);
-}
-#endif
-
 /* write_blocks(rcksum_state, buf, startblock, endblock)
  * Writes the block range (inclusive) from the supplied buffer to our
  * under-construction output file */
@@ -374,8 +364,10 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
                     /* Okay, we have a hash hit. Follow the hash chain and
                      * check our block against all the entries. */
                     thismatch = check_checksums_on_hash_chain(z, e, data + x, 0);
-                    if (thismatch)
+                    if (thismatch) {
                         blocks_matched = seq_matches;
+                        fprintf(stderr, "thismatch: %d at x=%ld\n", thismatch, x);
+                    }
                 }
             }
             got_blocks += thismatch;

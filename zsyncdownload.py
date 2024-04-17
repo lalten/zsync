@@ -67,7 +67,7 @@ def main(zsyncurl: str, seedfile: str) -> int:
 
     cmd = ["zsyncranges", zsyncfile, seedfile]
     out = subprocess.check_output(cmd, text=True)
-    ranges = json.loads(out)
+    ranges = json.loads(out)["ranges"]
 
     headers = parse_zsyncfile(zsyncfile)
     fileurl = make_url(zsyncurl, headers["URL"])

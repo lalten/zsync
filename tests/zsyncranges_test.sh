@@ -43,18 +43,16 @@ separator
 
 #----------------------------------------------------------------
 echo Added some blocks to the front
-dd if=tests/files/loremipsum of="$TEST_TMPDIR/seed" bs=1 skip=81
 cat - tests/files/loremipsum <<<"This is extra data to be removed" >"$TEST_TMPDIR/seed"
 cat "$TEST_TMPDIR/seed"
 ranges="$(./zsyncranges "$(pwd)/tests/loremipsum.zsync" "$TEST_TMPDIR/seed")"
-test "$ranges" == '{"reuse":[[0,33,1064]],"download":[]}' # TODO: fix!
+test "$ranges" == '{"reuse":[[0,33,1064]],"download":[]}'
 separator
 
 #----------------------------------------------------------------
 echo Added some blocks to the back
-dd if=tests/files/loremipsum of="$TEST_TMPDIR/seed" bs=1 skip=81
 cat tests/files/loremipsum - <<<"This is extra data to be removed" >"$TEST_TMPDIR/seed"
 cat "$TEST_TMPDIR/seed"
 ranges="$(./zsyncranges "$(pwd)/tests/loremipsum.zsync" "$TEST_TMPDIR/seed")"
-test "$ranges" == '{"reuse":[[0,0,1064]],"download":[]}' # TODO: fix!
+test "$ranges" == '{"reuse":[[0,0,1064]],"download":[]}'
 separator

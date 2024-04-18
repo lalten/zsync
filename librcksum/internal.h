@@ -62,6 +62,10 @@ struct rcksum_state {
     const struct hash_entry *next_match;
     zs_blockid next_known;
 
+    off_t cur_position_in_file;
+    struct reuseable_range *reusable_ranges;
+    size_t num_reusable_ranges;
+
     /* Hash table for rsync algorithm */
     unsigned int hashmask;
     struct hash_entry *blockhashes;

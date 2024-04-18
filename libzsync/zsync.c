@@ -512,6 +512,10 @@ static int zsync_submit_data(struct zsync_state *zs, const unsigned char *buf, o
     return rcksum_submit_blocks(zs->rs, buf, blstart, blend);
 }
 
+void zsync_get_reuseable_ranges(struct zsync_state *zs, struct reuseable_range **rr_out, size_t *len_rr_out) {
+    rcksum_get_reusable_range(zs->rs, rr_out, len_rr_out);
+}
+
 /****************************************************************************
  *
  * zsync_receiver object definition and methods.

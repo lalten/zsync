@@ -77,6 +77,19 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
     off_t len = ((off_t)(bto - bfrom + 1)) << z->blockshift;
     off_t offset = ((off_t)bfrom) << z->blockshift;
 
+    if (!z->num_reusable_ranges) {
+        z->num_reusable_ranges++;
+        z->reusable_ranges = realloc(z->reusable_ranges, z->num_reusable_ranges * sizeof(struct reuseable_range));
+        struct reuseable_range *range = &z->reusable_ranges[z->num_reusable_ranges - 1];
+        range->dst = offset;
+        range->len = len;
+        range->src = z->cur_position_in_file;
+    } else {
+        struct reuseable_range *range = &z->reusable_ranges[z->num_reusable_ranges - 1];
+        if (range->dst + range->len == offset) {
+            range->len += len;
+        }
+    }
     while (len) {
         size_t l = (size_t)len;
         ssize_t rc;
@@ -290,6 +303,7 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
 
     if (offset) {
         x = z->skip;
+        z->cur_position_in_file += z->skip;
     } else {
         z->next_match = NULL;
     }
@@ -338,18 +352,6 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
         while (0 == blocks_matched && x < x_limit) {
             /* # of blocks of the output file we got from this data */
             int thismatch = 0;
-
-#if 0
-            {   /* Catch rolling checksum failure */
-                int k = 0;
-                struct rsum c = rcksum_calc_rsum_block(data + x + bs * k, bs);
-                if (c.a != z->r[k].a || c.b != z->r[k].b) {
-                    fprintf(stderr, "rsum miscalc (%d) at %lld\n", k, offset + x);
-                    exit(3);
-                }
-            }
-#endif
-
             {
                 const struct hash_entry *e;
 
@@ -381,6 +383,7 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
                 if (seq_matches > 1)
                     UPDATE_RSUM(z->r[1].a, z->r[1].b, nc, Nc, z->blockshift);
                 x++;
+                z->cur_position_in_file++;
             }
         }
 
@@ -388,7 +391,9 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
          * at x, it's highly unlikely to get a hit at x+1 as all the
          * target's blocks are multiples of the blocksize apart. */
         if (blocks_matched) {
-            x += z->blocksize + (blocks_matched > 1 ? z->blocksize : 0);
+            off_t incr = z->blocksize + (blocks_matched > 1 ? z->blocksize : 0);
+            x += incr;
+            z->cur_position_in_file += incr;
 
             if (x > x_limit) {
                 /* can't calculate rsum for block after this one, because
@@ -433,6 +438,11 @@ static off_t get_file_size(FILE *f) {
     return st.st_size;
 }
 
+void rcksum_get_reusable_range(struct rcksum_state *z, struct reuseable_range **rr_out, size_t *len_rr_out) {
+    *len_rr_out = z->num_reusable_ranges;
+    *rr_out = z->reusable_ranges;
+}
+
 /* rcksum_submit_source_file(self, stream, progress)
  * Read the given stream, applying the rsync rolling checksum algorithm to
  * identify any blocks of data in common with the target file. Blocks found are
@@ -442,6 +452,8 @@ int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress) {
     /* Track progress */
     int got_blocks = 0;
     off_t in = 0;
+    off_t position_in_file = 0;
+    z->cur_position_in_file = 0;
     int in_mb = 0;
     off_t size = get_file_size(f);
     struct progress *p;
@@ -477,6 +489,8 @@ int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress) {
         /* Else, move the last context bytes from the end of the buffer to the
          * start, and refill the rest of the buffer from the stream. */
         else {
+            position_in_file += bufsize - z->context;
+            z->cur_position_in_file = position_in_file;
             memcpy(buf, buf + (bufsize - z->context), z->context);
             in += bufsize - z->context;
             len = z->context + fread(buf + z->context, 1, bufsize - z->context, f);
@@ -503,6 +517,12 @@ int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress) {
         }
     }
     free(buf);
+
+    for (size_t i = 0; i < z->num_reusable_ranges; i++) {
+        fprintf(stderr, "From file offset %ld: %zu bytes into destination offset %ld\n", z->reusable_ranges[i].src,
+                z->reusable_ranges[i].len, z->reusable_ranges[i].dst);
+    }
+
     if (progress) {
         end_progress(p, 2);
     }

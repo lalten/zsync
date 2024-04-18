@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "librcksum/rcksum.h"
 #include "libzsync/zsync.h"
 
 int main(int argc, char **argv) {
@@ -33,9 +34,21 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
+    struct reuseable_range *rr;
+    size_t len_rr;
+    zsync_get_reuseable_ranges(zs, &rr, &len_rr);
+    printf("{\"reuse\":[");
+    for (size_t i = 0; i < len_rr; i++) {
+        printf("[%ld,%ld,%zu]", rr[i].dst, rr[i].src, rr[i].len);
+        if (i < len_rr - 1) {
+            printf(",");
+        }
+    }
+    printf("],");
+
     int nrange = 0;
     off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
-    printf("{\"ranges\":[");
+    printf("\"download\":[");
     for (int i = 0; i < nrange; i++) {
         printf("[%ld,%ld]", zbyterange[i * 2], zbyterange[i * 2 + 1]);
         if (i < nrange - 1) {

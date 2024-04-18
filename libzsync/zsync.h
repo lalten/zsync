@@ -17,6 +17,7 @@
 #include <time.h>
 
 struct zsync_state;
+struct reuseable_range;
 
 /* zsync_begin - load a zsync file and return data structure to use for the rest of the process.
  */
@@ -49,6 +50,8 @@ void zsync_progress(const struct zsync_state *zs, long long *got, long long *tot
 /* zsync_submit_source_file - submit local file data to zsync
  */
 int zsync_submit_source_file(struct zsync_state *zs, FILE *f, int progress);
+
+void zsync_get_reuseable_ranges(struct zsync_state *zs, struct reuseable_range **bpr_out, size_t *len_bpr_out);
 
 /* zsync_get_url - returns a URL from which to get needed data.
  * Returns NULL on failure, or a array of pointers to URLs.

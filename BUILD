@@ -111,7 +111,10 @@ cc_binary(
     name = "zsyncranges",
     srcs = ["zsyncranges.c"],
     visibility = ["//visibility:public"],
-    deps = [":libzsync"],
+    deps = [
+        ":librcksum",
+        ":libzsync",
+    ],
 )
 
 cc_library(

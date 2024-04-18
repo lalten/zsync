@@ -24,6 +24,15 @@ struct rcksum_state;
 
 typedef int zs_blockid;
 
+// A range of bytes from a source file that can be reused in the target file
+// This is a half-open range, so the byte at src + len is not included.
+// Think of the format as analogous to what memcpy wants
+struct reuseable_range {
+    off_t dst;  // byte offset in the target file
+    size_t len; // length of the range in bytes
+    off_t src;  // byte offset in the source file
+};
+
 struct rsum {
     unsigned short a;
     unsigned short b;
@@ -48,6 +57,8 @@ void rcksum_add_target_block(struct rcksum_state *z, zs_blockid b, struct rsum r
 int rcksum_submit_blocks(struct rcksum_state *z, const unsigned char *data, zs_blockid bfrom, zs_blockid bto);
 int rcksum_submit_source_data(struct rcksum_state *z, unsigned char *data, size_t len, off_t offset);
 int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress);
+
+void rcksum_get_reusable_range(struct rcksum_state *z, struct reuseable_range **bpr_out, size_t *len_bpr_out);
 
 /* This reads back in data which is already known. */
 ssize_t rcksum_read_known_data(struct rcksum_state *z, unsigned char *buf, off_t offset, size_t len);

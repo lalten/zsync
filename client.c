@@ -243,9 +243,16 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u) {
             break;
         }
         if (buf_size < len) {
-            fprintf(stderr, "short curl read (got %ld, expected %ld)\n", buf_size, len);
-            ret = 1;
-            break;
+            if (i == nrange - 1) {
+                // The last block may have an end past the end of the file.
+                // zsync_complete will truncate the file to the correct size.
+                buf = realloc(buf, len);
+                memset(buf + buf_size, 0, len - buf_size);
+            } else {
+                fprintf(stderr, "Unexpected short curl read (got %ld, expected %ld)\n", buf_size, len);
+                ret = 1;
+                break;
+            }
         }
         /* Pass received data to the zsync receiver, which writes it to the
          * appropriate location in the target file */
@@ -256,7 +263,7 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u) {
 
         // Needed in case next call returns len=0 and we need to signal where the EOF was.
         zoffset += len;
-        http_down += len;
+        http_down += buf_size;
     }
     /* Let the zsync receiver know that we're at EOF; there
      * could be data in its buffer that it can use or needs to process */

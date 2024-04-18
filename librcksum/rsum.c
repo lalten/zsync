@@ -366,7 +366,6 @@ int rcksum_submit_source_data(struct rcksum_state *const z, unsigned char *data,
                     thismatch = check_checksums_on_hash_chain(z, e, data + x, 0);
                     if (thismatch) {
                         blocks_matched = seq_matches;
-                        fprintf(stderr, "thismatch: %d at x=%ld\n", thismatch, x);
                     }
                 }
             }

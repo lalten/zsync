@@ -17,8 +17,27 @@ from pathlib import Path
 import sys
 import subprocess
 import json
+import tempfile
+from typing import NamedTuple
 import urllib.request
 import urllib.parse
+import shutil
+
+
+class ReuseableRange(NamedTuple):
+    dst: int
+    src: int
+    len: int
+
+
+class DownloadRange(NamedTuple):
+    start: int
+    end: int
+
+
+class ZsyncRanges(NamedTuple):
+    reuse: list[ReuseableRange]
+    download: list[DownloadRange]
 
 
 def parse_zsyncfile(zsyncfile_path: str) -> dict[str, int | str]:
@@ -32,23 +51,35 @@ def parse_zsyncfile(zsyncfile_path: str) -> dict[str, int | str]:
     return headers
 
 
-def update_file(file_path: str, file_url: str, ranges: list[tuple[int, int]]) -> None:
-    if not ranges:
-        return
+def update_file(
+    new_file_size: int, file_path: str, file_url: str, ranges: ZsyncRanges
+) -> None:
     req = urllib.request.Request(file_url)
-    total_bytes = sum(end - start + 1 for start, end in ranges)
+    downloaded_bytes_total = sum(end - start + 1 for start, end in ranges.download)
     downloaded_bytes = 0
-    with open(file_path, "wb") as f:
-        for start, end in ranges:
+    with tempfile.SpooledTemporaryFile() as temp:
+        temp.write(b"\0" * new_file_size)
+
+        with open(file_path, "rb") as seed:
+            for reuse in ranges.reuse:
+                temp.seek(reuse.dst, os.SEEK_SET)
+                seed.seek(reuse.src, os.SEEK_SET)
+                temp.write(seed.read(reuse.len))
+
+        for start, end in ranges.download:
             req.remove_header("Range")
             req.add_header("Range", f"bytes={start}-{end}")
-            f.seek(start)
+            temp.seek(start, os.SEEK_SET)
             with urllib.request.urlopen(req) as data:
                 while chunk := data.read(1024):
-                    f.write(chunk)
+                    temp.write(chunk)
                     downloaded_bytes += len(chunk)
-                    progress = round(100 * downloaded_bytes / total_bytes)
+                    progress = round(100 * downloaded_bytes / downloaded_bytes_total)
                     print(f"{progress}%", end="\r")
+
+        temp.seek(0, os.SEEK_SET)
+        with open(file_path, "wb") as out:
+            shutil.copyfileobj(temp, out)
 
 
 def make_url(zsyncurl: str, header_url: str) -> str:
@@ -62,18 +93,25 @@ def sha1sum(file_path: str) -> str:
     return hashlib.sha1(Path(file_path).read_bytes()).hexdigest()
 
 
+def parse_json(json_str: str) -> ZsyncRanges:
+    data = json.loads(json_str)
+    reuse = [ReuseableRange(*r) for r in data["reuse"]]
+    download = [DownloadRange(*r) for r in data["download"]]
+    return ZsyncRanges(reuse, download)
+
+
 def main(zsyncurl: str, seedfile: str) -> int:
     zsyncfile, _ = urllib.request.urlretrieve(zsyncurl)
 
     cmd = ["zsyncranges", zsyncfile, seedfile]
     out = subprocess.check_output(cmd, text=True)
-    ranges = json.loads(out)["ranges"]
+    ranges = parse_json(out)
 
-    headers = parse_zsyncfile(zsyncfile)
-    fileurl = make_url(zsyncurl, headers["URL"])
-    update_file(seedfile, fileurl, ranges)
+    zsync_headers = parse_zsyncfile(zsyncfile)
+    fileurl = make_url(zsyncurl, zsync_headers["URL"])
+    update_file(zsync_headers["Length"], seedfile, fileurl, ranges)
 
-    if sha1sum(seedfile) == headers["SHA-1"]:
+    if sha1sum(seedfile) == zsync_headers["SHA-1"]:
         return os.EX_OK
     return 1
 

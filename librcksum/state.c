@@ -59,6 +59,9 @@ struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_
     z->ranges = NULL;
     z->numranges = 0;
 
+    z->reusable_ranges = NULL;
+    z->num_reusable_ranges = 0;
+
     /* Hashes for looking up checksums are generated when needed.
      * So initially store NULL so we know there's nothing there yet.
      */
@@ -127,6 +130,7 @@ void rcksum_end(struct rcksum_state *z) {
     free(z->blockhashes);
     free(z->bithash);
     free(z->ranges); // Should be NULL already
+    free(z->reusable_ranges);
 #ifdef DEBUG
     fprintf(stderr, "hashhit %lld, weakhit %d, checksummed %d, stronghit %d\n", z->stats.hashhit, z->stats.weakhit,
             z->stats.checksummed, z->stats.stronghit);

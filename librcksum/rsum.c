@@ -454,6 +454,7 @@ int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress) {
     off_t in = 0;
     off_t position_in_file = 0;
     z->cur_position_in_file = 0;
+    z->num_reusable_ranges = 0;
     int in_mb = 0;
     off_t size = get_file_size(f);
     struct progress *p;
@@ -517,12 +518,6 @@ int rcksum_submit_source_file(struct rcksum_state *z, FILE *f, int progress) {
         }
     }
     free(buf);
-
-    for (size_t i = 0; i < z->num_reusable_ranges; i++) {
-        fprintf(stderr, "From file offset %ld: %zu bytes into destination offset %ld\n", z->reusable_ranges[i].src,
-                z->reusable_ranges[i].len, z->reusable_ranges[i].dst);
-    }
-
     if (progress) {
         end_progress(p, 2);
     }

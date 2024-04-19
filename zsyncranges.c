@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
         perror(argv[1]);
         exit(EXIT_FAILURE);
     }
-    struct zsync_state *zs = zsync_begin(zsyncfile_stream);
+    struct zsync_state *zs = zsync_begin(zsyncfile_stream, true);
     fclose(zsyncfile_stream);
     if (!zs) {
         exit(EXIT_FAILURE);

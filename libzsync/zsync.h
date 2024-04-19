@@ -13,6 +13,7 @@
  *   COPYING file for details.
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -21,7 +22,7 @@ struct reuseable_range;
 
 /* zsync_begin - load a zsync file and return data structure to use for the rest of the process.
  */
-struct zsync_state *zsync_begin(FILE *cf);
+struct zsync_state *zsync_begin(FILE *cf, bool no_output);
 
 /* zsync_filename - return the suggested filename from the .zsync file */
 char *zsync_filename(const struct zsync_state *);

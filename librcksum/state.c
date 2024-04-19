@@ -21,6 +21,7 @@
 
 #include "zsglobal.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -32,7 +33,7 @@
  * Creates and returns an rcksum_state with the given properties
  */
 struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_bytes, unsigned int checksum_bytes,
-                                 int require_consecutive_matches) {
+                                 int require_consecutive_matches, bool no_output) {
     /* Allocate memory for the object */
     struct rcksum_state *z = malloc(sizeof(struct rcksum_state));
     if (z == NULL)
@@ -51,7 +52,7 @@ struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_
     z->context = blocksize * require_consecutive_matches;
 
     /* Temporary file to hold the target file as we get blocks for it */
-    z->filename = strdup("rcksum-XXXXXX");
+    z->filename = no_output ? NULL : strdup("rcksum-XXXXXX");
 
     /* Initialise to 0 various state & stats */
     z->gotblocks = 0;

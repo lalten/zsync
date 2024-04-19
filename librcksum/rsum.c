@@ -90,6 +90,10 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
             range->len += len;
         }
     }
+
+    if (!z->filename) {
+        len = 0;
+    }
     while (len) {
         size_t l = (size_t)len;
         ssize_t rc;
@@ -125,14 +129,6 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
             add_to_ranges(z, id);
         }
     }
-}
-
-/* rcksum_read_known_data(self, buf, offset, len)
- * Read back data from the working output - read len bytes from offset into
- * buf[] (which must be at least len bytes long) */
-ssize_t rcksum_read_known_data(struct rcksum_state *z, unsigned char *buf, off_t offset, size_t len) {
-    ssize_t rc = pread(z->fd, buf, len, offset);
-    return rc;
 }
 
 /* rcksum_submit_blocks(self, data, startblock, endblock)

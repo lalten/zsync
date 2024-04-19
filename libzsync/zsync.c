@@ -30,7 +30,7 @@
  */
 #include "zsglobal.h"
 
-#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,6 +73,7 @@ struct zsync_state {
     int nurl;
 
     char *cur_filename; /* If we have taken the filename from rcksum, it is here */
+    bool no_output;
 
     /* Hints for the output file, from the .zsync */
     char *filename; /* The Filename: header */
@@ -102,7 +103,7 @@ static char **append_ptrlist(int *n, char **p, char *a) {
 }
 
 /* Constructor */
-struct zsync_state *zsync_begin(FILE *f) {
+struct zsync_state *zsync_begin(FILE *f, bool no_output) {
     /* Defaults for the checksum bytes and sequential matches properties of the
      * rcksum_state. These are the defaults from versions of zsync before these
      * were variable. */
@@ -230,7 +231,7 @@ struct zsync_state *zsync_begin(FILE *f) {
 static int zsync_read_blocksums(struct zsync_state *zs, FILE *f, int rsum_bytes, unsigned int checksum_bytes,
                                 int seq_matches) {
     /* Make the rcksum_state first */
-    if (!(zs->rs = rcksum_init(zs->blocks, zs->blocksize, rsum_bytes, checksum_bytes, seq_matches))) {
+    if (!(zs->rs = rcksum_init(zs->blocks, zs->blocksize, rsum_bytes, checksum_bytes, seq_matches, zs->no_output))) {
         return -1;
     }
 
@@ -416,6 +417,10 @@ int zsync_complete(struct zsync_state *zs) {
     zsync_cur_filename(zs);
     rcksum_end(zs->rs);
     zs->rs = NULL;
+
+    if (!fh) {
+        return rc;
+    }
 
     /* Truncate the file to the exact length (to remove any trailing NULs from
      * the last block); return to the start of the file ready to verify. */

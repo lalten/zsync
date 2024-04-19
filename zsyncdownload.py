@@ -17,7 +17,6 @@ from pathlib import Path
 import sys
 import subprocess
 import json
-import tempfile
 from typing import NamedTuple
 import urllib.request
 import urllib.parse
@@ -52,34 +51,33 @@ def parse_zsyncfile(zsyncfile_path: str) -> dict[str, int | str]:
     return headers
 
 
-def update_file(file_path: str, file_url: str, ranges: ZsyncRanges) -> None:
-    req = urllib.request.Request(file_url)
+def update_file(file_path: str, file_url: str, ranges: ZsyncRanges, outfile: str) -> None:
     downloaded_bytes_total = sum(end - start + 1 for start, end in ranges.download)
     downloaded_bytes = 0
-    with tempfile.SpooledTemporaryFile() as temp:
-        temp.write(b"\0" * ranges.length)
+    with open(outfile, "wb") as out:
+        out.truncate(ranges.length)
 
         with open(file_path, "rb") as seed:
             for reuse in ranges.reuse:
-                temp.seek(reuse.dst, os.SEEK_SET)
+                out.seek(reuse.dst, os.SEEK_SET)
                 seed.seek(reuse.src, os.SEEK_SET)
-                temp.write(seed.read(reuse.len))
+                out.write(seed.read(reuse.len))
 
         for start, end in ranges.download:
+            req = urllib.request.Request(file_url)
             req.remove_header("Range")
             req.add_header("Range", f"bytes={start}-{end}")
-            temp.seek(start, os.SEEK_SET)
-            with urllib.request.urlopen(req) as data:
-                while chunk := data.read(1024):
-                    temp.write(chunk)
-                    downloaded_bytes += len(chunk)
-                    progress = round(100 * downloaded_bytes / downloaded_bytes_total)
-                    print(f"{progress}%", end="\r")
-
-        temp.seek(0, os.SEEK_SET)
-        with open(file_path, "wb") as out:
-            shutil.copyfileobj(temp, out)
-
+            out.seek(start, os.SEEK_SET)
+            try:
+                with urllib.request.urlopen(req) as data:
+                    while chunk := data.read(1024):
+                        out.write(chunk)
+                        downloaded_bytes += len(chunk)
+                        progress = round(100 * downloaded_bytes / downloaded_bytes_total)
+                        print(f"\r{progress}%", end="")
+            except urllib.error.HTTPError as e:
+                raise RuntimeError(f"HTTP Error {e.code} for {req.get_header('Range')} (length {ranges.length})") from e
+    print()
 
 def make_url(zsyncurl: str, header_url: str) -> str:
     parsed_url = urllib.parse.urlparse(header_url)
@@ -99,7 +97,7 @@ def parse_json(json_str: str) -> ZsyncRanges:
     return ZsyncRanges(data["length"], reuse, download)
 
 
-def main(zsyncurl: str, seedfile: str) -> int:
+def main(zsyncurl: str, seedfile: str, outfile: str) -> int:
     zsyncfile, _ = urllib.request.urlretrieve(zsyncurl)
 
     cmd = ["zsyncranges", zsyncfile, seedfile]
@@ -108,15 +106,15 @@ def main(zsyncurl: str, seedfile: str) -> int:
 
     zsync_headers = parse_zsyncfile(zsyncfile)
     fileurl = make_url(zsyncurl, zsync_headers["URL"])
-    update_file(seedfile, fileurl, ranges)
+    update_file(seedfile, fileurl, ranges, outfile)
 
-    if sha1sum(seedfile) == zsync_headers["SHA-1"]:
+    if sha1sum(outfile) == zsync_headers["SHA-1"]:
         return os.EX_OK
     return 1
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print(f"Usage: {sys.argv[0]} https://example.com/file.zsync file")
+    if len(sys.argv) != 4:
+        print(f"Usage: {sys.argv[0]} https://example.com/file.zsync infile outfile")
         sys.exit(1)
-    sys.exit(main(sys.argv[1], sys.argv[2]))
+    sys.exit(main(*sys.argv[1:]))

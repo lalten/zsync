@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "librcksum/rcksum.h"
@@ -11,10 +12,15 @@ int main(int argc, char **argv) {
         exit(2);
     }
 
-    FILE *zsyncfile_stream = fopen(argv[1], "r");
-    if (!zsyncfile_stream) {
-        perror(argv[1]);
-        exit(EXIT_FAILURE);
+    FILE *zsyncfile_stream;
+    if (strcmp(argv[1], "-") == 0) {
+        zsyncfile_stream = stdin;
+    } else {
+        zsyncfile_stream = fopen(argv[1], "r");
+        if (!zsyncfile_stream) {
+            perror(argv[1]);
+            exit(EXIT_FAILURE);
+        }
     }
     struct zsync_state *zs = zsync_begin(zsyncfile_stream, true);
     fclose(zsyncfile_stream);

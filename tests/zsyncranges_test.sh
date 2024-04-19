@@ -34,6 +34,12 @@ test "$ranges" == '{"reuse":[[0,0,168]],"download":[[168,183],[448,455],[560,575
 separator
 
 #----------------------------------------------------------------
+echo Read zsync from stdin
+ranges="$(./zsyncranges - "$TEST_TMPDIR/seed" <"$(pwd)/tests/loremipsum.zsync")"
+test "$ranges" == '{"reuse":[[0,0,168]],"download":[[168,183],[448,455],[560,575],[800,807]]}'
+separator
+
+#----------------------------------------------------------------
 echo Removed some blocks from the front, need partial update
 dd if=tests/files/loremipsum of="$TEST_TMPDIR/seed" bs=1 skip=81
 ranges="$(./zsyncranges "$(pwd)/tests/loremipsum.zsync" "$TEST_TMPDIR/seed")"

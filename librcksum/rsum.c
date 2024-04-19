@@ -91,7 +91,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
         }
     }
 
-    if (!z->filename) {
+    if (!z->fd) {
         len = 0;
     }
     while (len) {

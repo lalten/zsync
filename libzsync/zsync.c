@@ -418,24 +418,23 @@ int zsync_complete(struct zsync_state *zs) {
     rcksum_end(zs->rs);
     zs->rs = NULL;
 
-    if (!fh) {
-        return rc;
-    }
-
-    /* Truncate the file to the exact length (to remove any trailing NULs from
-     * the last block); return to the start of the file ready to verify. */
-    if (ftruncate(fh, zs->filelen) != 0) {
-        perror("ftruncate");
-        rc = -1;
-    }
-    if (lseek(fh, 0, SEEK_SET) != 0) {
-        perror("lseek");
-        rc = -1;
+    if (fh) {
+        /* Truncate the file to the exact length (to remove any trailing NULs from
+         * the last block); return to the start of the file ready to verify. */
+        if (ftruncate(fh, zs->filelen) != 0) {
+            perror("ftruncate");
+            rc = -1;
+        }
+        if (lseek(fh, 0, SEEK_SET) != 0) {
+            perror("lseek");
+            rc = -1;
+        }
     }
 
     /* Do checksum check */
     if (rc == 0 && zs->checksum && !strcmp(zs->checksum_method, ckmeth_sha1)) {
         rc = zsync_sha1(zs, fh);
+        fprintf(stderr, "Checksum %s\n", rc == 1 ? "verified" : "failed");
     }
     close(fh);
 

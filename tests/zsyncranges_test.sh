@@ -30,7 +30,7 @@ sed -i 's/massa/xxxxx/g' "$TEST_TMPDIR/seed"
 # changed locations are at "grep -ob massa tests/files/loremipsum | cut -d: -f1": 172, 451, 566, 803
 ranges="$(./zsyncranges "$(pwd)/tests/loremipsum.zsync" "$TEST_TMPDIR/seed")"
 # Ranges fall at change locations
-test "$ranges" == '{"length":1057,"reuse":[[0,0,168]],"download":[[168,183],[448,455],[560,575],[800,807]]}'
+test "$ranges" == '{"length":1057,"reuse":[[0,0,168]],"download":[[168,183],[448,455],[560,575],[800,807]]}' # TODO: fix!
 separator
 
 #----------------------------------------------------------------

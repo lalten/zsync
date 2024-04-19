@@ -47,16 +47,15 @@ int main(int argc, char **argv) {
     int nrange = 0;
     off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
 
-    printf("{\"length\":%ld,", zsync_get_filelength(zs));
-    printf("\"reuse\":[");
+    printf("{\"length\":%ld", zsync_get_filelength(zs));
+    printf(",\"reuse\":[");
     for (size_t i = 0; i < len_rr; i++) {
         printf("[%ld,%ld,%zu]", rr[i].dst, rr[i].src, rr[i].len);
         if (i < len_rr - 1) {
             printf(",");
         }
     }
-    printf("],");
-    printf("\"download\":[");
+    printf("],\"download\":[");
     for (int i = 0; i < nrange; i++) {
         printf("[%ld,%ld]", zbyterange[i * 2], zbyterange[i * 2 + 1]);
         if (i < nrange - 1) {

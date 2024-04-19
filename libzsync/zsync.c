@@ -609,6 +609,8 @@ int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf, off_
     return ret;
 }
 
+off_t zsync_get_filelength(const struct zsync_state *zs) { return zs->filelen; }
+
 /* Destructor */
 void zsync_end_receive(struct zsync_receiver *zr) {
     free(zr->outbuf);

@@ -43,7 +43,12 @@ int main(int argc, char **argv) {
     struct reuseable_range *rr;
     size_t len_rr;
     zsync_get_reuseable_ranges(zs, &rr, &len_rr);
-    printf("{\"reuse\":[");
+
+    int nrange = 0;
+    off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
+
+    printf("{\"length\":%ld,", zsync_get_filelength(zs));
+    printf("\"reuse\":[");
     for (size_t i = 0; i < len_rr; i++) {
         printf("[%ld,%ld,%zu]", rr[i].dst, rr[i].src, rr[i].len);
         if (i < len_rr - 1) {
@@ -51,9 +56,6 @@ int main(int argc, char **argv) {
         }
     }
     printf("],");
-
-    int nrange = 0;
-    off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
     printf("\"download\":[");
     for (int i = 0; i < nrange; i++) {
         printf("[%ld,%ld]", zbyterange[i * 2], zbyterange[i * 2 + 1]);
@@ -62,6 +64,7 @@ int main(int argc, char **argv) {
         }
     }
     printf("]}\n");
+
     free(zbyterange);
     char *temp_file = zsync_end(zs);
     unlink(temp_file);

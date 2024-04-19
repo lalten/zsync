@@ -93,3 +93,5 @@ void zsync_end_receive(struct zsync_receiver *zr);
 /* Supply data buf of length len received corresponding to offset offset from the URL.
  * Returns 0 for success; if not, you should not submit more data. */
 int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf, off_t offset, size_t len);
+
+off_t zsync_get_filelength(const struct zsync_state *zs);

@@ -36,6 +36,7 @@ class DownloadRange(NamedTuple):
 
 
 class ZsyncRanges(NamedTuple):
+    length: int
     reuse: list[ReuseableRange]
     download: list[DownloadRange]
 
@@ -51,14 +52,12 @@ def parse_zsyncfile(zsyncfile_path: str) -> dict[str, int | str]:
     return headers
 
 
-def update_file(
-    new_file_size: int, file_path: str, file_url: str, ranges: ZsyncRanges
-) -> None:
+def update_file(file_path: str, file_url: str, ranges: ZsyncRanges) -> None:
     req = urllib.request.Request(file_url)
     downloaded_bytes_total = sum(end - start + 1 for start, end in ranges.download)
     downloaded_bytes = 0
     with tempfile.SpooledTemporaryFile() as temp:
-        temp.write(b"\0" * new_file_size)
+        temp.write(b"\0" * ranges.length)
 
         with open(file_path, "rb") as seed:
             for reuse in ranges.reuse:
@@ -97,7 +96,7 @@ def parse_json(json_str: str) -> ZsyncRanges:
     data = json.loads(json_str)
     reuse = [ReuseableRange(*r) for r in data["reuse"]]
     download = [DownloadRange(*r) for r in data["download"]]
-    return ZsyncRanges(reuse, download)
+    return ZsyncRanges(data["length"], reuse, download)
 
 
 def main(zsyncurl: str, seedfile: str) -> int:
@@ -109,7 +108,7 @@ def main(zsyncurl: str, seedfile: str) -> int:
 
     zsync_headers = parse_zsyncfile(zsyncfile)
     fileurl = make_url(zsyncurl, zsync_headers["URL"])
-    update_file(zsync_headers["Length"], seedfile, fileurl, ranges)
+    update_file(seedfile, fileurl, ranges)
 
     if sha1sum(seedfile) == zsync_headers["SHA-1"]:
         return os.EX_OK

@@ -33,7 +33,7 @@
  * Creates and returns an rcksum_state with the given properties
  */
 struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_bytes, unsigned int checksum_bytes,
-                                 int require_consecutive_matches, bool no_output) {
+                                 int require_consecutive_matches, bool no_output, off_t filelen) {
     /* Allocate memory for the object */
     struct rcksum_state *z = malloc(sizeof(struct rcksum_state));
     if (z == NULL)
@@ -46,6 +46,7 @@ struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_
     z->rsum_bits = rsum_bytes * 8;
     z->checksum_bytes = checksum_bytes;
     z->seq_matches = require_consecutive_matches;
+    z->filelen = filelen;
 
     /* require_consecutive_matches is 1 if true; and if true we need 1 block of
      * context to do block matching */

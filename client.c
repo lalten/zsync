@@ -227,32 +227,28 @@ int fetch_remaining_blocks_http(struct zsync_state *z, const char *u) {
         assert(zbyterange[i * 2 + 1] > zbyterange[i * 2]);
         size_t len = zbyterange[i * 2 + 1] - zbyterange[i * 2] + 1;
         zoffset = zbyterange[i * 2];
+        size_t range_start = zoffset;
+        size_t range_end = zoffset + len - 1; // HTTP range end is inclusive!
         if (!no_progress) {
-            fprintf(stderr, "Getting range %d/%d: %ld+%ld\n", i + 1, nrange, zoffset, len);
+            fprintf(stderr, "Getting range %d/%d: %ld-%ld (%ldB)\n", i + 1, nrange, range_start, range_end, len);
         }
         char range_option[PATH_MAX] = "";
-        sprintf(range_option, "--range %ld-%ld", zoffset, zoffset + len);
+        sprintf(range_option, "--range %ld-%ld", range_start, range_end);
         curl_options[0] = range_option;
 
         char *buf = NULL;
         size_t buf_size = 0;
         int ret = curl_get(curl_options, &buf, &buf_size);
         if (ret) {
-            fprintf(stderr, "curl exited %i, failed to download range %ld-%ld of %s\n", ret, zoffset, zoffset + len, u);
+            fprintf(stderr, "curl exited %i, failed to download range %ld-%ld (%ldB)\n", ret, range_start, range_end,
+                    len);
             ret = 1;
             break;
         }
-        if (buf_size < len) {
-            if (i == nrange - 1) {
-                // The last block may have an end past the end of the file.
-                // zsync_complete will truncate the file to the correct size.
-                buf = realloc(buf, len);
-                memset(buf + buf_size, 0, len - buf_size);
-            } else {
-                fprintf(stderr, "Unexpected short curl read (got %ld, expected %ld)\n", buf_size, len);
-                ret = 1;
-                break;
-            }
+        if (buf_size != len) {
+            fprintf(stderr, "Unexpected size of curl read (got %ld, expected %ld)\n", buf_size, len);
+            ret = 1;
+            break;
         }
         /* Pass received data to the zsync receiver, which writes it to the
          * appropriate location in the target file */

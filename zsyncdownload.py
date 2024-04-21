@@ -20,7 +20,6 @@ import json
 from typing import NamedTuple
 import urllib.request
 import urllib.parse
-import shutil
 
 
 class ReuseableRange(NamedTuple):
@@ -52,7 +51,8 @@ def parse_zsyncfile(zsyncfile_path: str) -> dict[str, int | str]:
 
 
 def update_file(file_path: str, file_url: str, ranges: ZsyncRanges, outfile: str) -> None:
-    downloaded_bytes_total = sum(end - start + 1 for start, end in ranges.download)
+    # Note: HTTP Range end is inclusive!
+    bytes_to_download = sum(end - start for start, end in ranges.download)
     downloaded_bytes = 0
     with open(outfile, "wb") as out:
         out.truncate(ranges.length)
@@ -73,7 +73,7 @@ def update_file(file_path: str, file_url: str, ranges: ZsyncRanges, outfile: str
                     while chunk := data.read(1024):
                         out.write(chunk)
                         downloaded_bytes += len(chunk)
-                        progress = round(100 * downloaded_bytes / downloaded_bytes_total)
+                        progress = round(100 * downloaded_bytes / bytes_to_download)
                         print(f"\r{progress}%", end="")
             except urllib.error.HTTPError as e:
                 raise RuntimeError(f"HTTP Error {e.code} for {req.get_header('Range')} (length {ranges.length})") from e
@@ -108,9 +108,10 @@ def main(zsyncurl: str, seedfile: str, outfile: str) -> int:
     fileurl = make_url(zsyncurl, zsync_headers["URL"])
     update_file(seedfile, fileurl, ranges, outfile)
 
-    if sha1sum(outfile) == zsync_headers["SHA-1"]:
-        return os.EX_OK
-    return 1
+    local_hash = sha1sum(outfile)
+    if local_hash != zsync_headers["SHA-1"]:
+        raise RuntimeError(f"SHA-1 mismatch: {local_hash} != {zsync_headers['SHA-1']}")
+    return os.EX_OK
 
 
 if __name__ == "__main__":

@@ -50,6 +50,7 @@ struct rcksum_state {
     unsigned int checksum_bytes;    /* How many bytes of the MD4 checksum are available */
     int seq_matches;
     unsigned int context; /* precalculated blocksize * seq_matches */
+    off_t filelen;
 
     /* These are used by the library. Note, not thread safe. */
     int skip; /* skip forward on next submit_source_data */

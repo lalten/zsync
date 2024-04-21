@@ -231,7 +231,8 @@ struct zsync_state *zsync_begin(FILE *f, bool no_output) {
 static int zsync_read_blocksums(struct zsync_state *zs, FILE *f, int rsum_bytes, unsigned int checksum_bytes,
                                 int seq_matches) {
     /* Make the rcksum_state first */
-    if (!(zs->rs = rcksum_init(zs->blocks, zs->blocksize, rsum_bytes, checksum_bytes, seq_matches, zs->no_output))) {
+    if (!(zs->rs = rcksum_init(zs->blocks, zs->blocksize, rsum_bytes, checksum_bytes, seq_matches, zs->no_output,
+                               zs->filelen))) {
         return -1;
     }
 
@@ -362,6 +363,12 @@ off_t *zsync_needed_byte_ranges(struct zsync_state *zs, int *num) {
     }
     free(blrange); /* And release the blocks, we're done with them */
 
+    if (byterange[2 * (nrange - 1) + 1] >= zs->filelen) {
+        fprintf(stderr, "Last block end %ld is greater than file length %ld\n", byterange[2 * (nrange - 1) + 1],
+                zs->filelen);
+        byterange[2 * (nrange - 1) + 1] = zs->filelen - 1;
+    }
+
     *num = nrange;
     return byterange;
 }
@@ -434,7 +441,6 @@ int zsync_complete(struct zsync_state *zs) {
     /* Do checksum check */
     if (rc == 0 && zs->checksum && !strcmp(zs->checksum_method, ckmeth_sha1)) {
         rc = zsync_sha1(zs, fh);
-        fprintf(stderr, "Checksum %s\n", rc == 1 ? "verified" : "failed");
     }
     close(fh);
 

@@ -77,10 +77,8 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
     off_t len = ((off_t)(bto - bfrom + 1)) << z->blockshift;
     off_t offset = ((off_t)bfrom) << z->blockshift;
 
-    bool add_new_reusable_range = false;
-    if (z->num_reusable_ranges == 0) {
-        add_new_reusable_range = true;
-    } else {
+    bool add_new_reusable_range = true;
+    if (z->num_reusable_ranges) {
         struct reuseable_range *range = &z->reusable_ranges[z->num_reusable_ranges - 1];
         if (range->dst + range->len == offset) {
             add_new_reusable_range = false;

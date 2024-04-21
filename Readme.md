@@ -95,31 +95,46 @@ Compared to `zsync`, it only supports exactly one source (seed) file and requrie
 
 ```sh
 ❯ bazel run @zsync3//:zsyncranges -- "$(pwd)/file.zsync" "$(pwd)/file"
-[[0,7],[264,279],[296,303],[560,575]]
+{"length":1057,"reuse":[[0,0,168],[184,184,264],[456,456,104],[576,576,224],[808,808,249]],"download":[[168,183],[448,455],[560,575],[800,807]]}
 ```
 (The need for $(pwd) is a Bazel thing.)
 
 The intended use case of zsyncranges is integration with a download manager that supports ranged downloads.
 
+#### zsyncdownload.py
+
+Is an example of how to use `zsyncranges` to download the ranges that need updating.
+Please don't use this directly: this is an example, not production level code.
+It could be written much more elegantly using the `requests` library.
+
+```sh
+❯ bazel build @zsync3//:zsyncranges
+❯ rm -f outfile
+❯ PATH="$PATH:bazel-bin" ./zsyncdownload.py https://example.com/file.zsync infile outfile
+❯ curl -fsSL https://example.com/file.zsync | grep -a SHA-1
+SHA-1: 4128828a8827665e80a648b3db036988fe479efc
+❯ sha1sum outfile
+4128828a8827665e80a648b3db036988fe479efc  outfile
+```
 
 ## Alternatives
 
 Zsync's combination of popularity and abandonment has led to a number of forks and reimplementations.
 
-| Repository                                      | Language | Maintained | Notes                                                                                   |
-| ----------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------------- |
-| https://github.com/cph6/zsync                   | C        | 💀          | Available via most package managers, just `apt install zsync`                           |
-| https://github.com/lalten/zsync <-- you're here | C        | ✅          | No compression support. Using `curl` http client. Bazel integration.                    |
-| https://github.com/sisong/hsynz                 | C++      | ✅          | Supports zstd, stronger checksums, directories. Using forked `minihttp` http client lib |
-| https://github.com/AppImageCommunity/zsync2     | C++      | ✅          | C++ wrapper for zsync. Using `libcpr` http client lib                                   |
-| https://github.com/probonopd/zsync-curl         | C        | 💀          | Mostly original zsync. Using `libcurl` http client lib                                  |
-| https://github.com/AppImageCommunity/zsync3     | C++      | 💀          |                                                                                         |
-| https://github.com/salesforce/zsync4j           | Java     | 💀          |                                                                                         |
-| https://github.com/rokups/zinc/                 | C++      | 💀          |                                                                                         |
-| https://github.com/AppImageCrafters/libzsync-go | Go       | 🤷          |                                                                                         |
-| https://github.com/Redundancy/go-sync           | Go       | 💀          |                                                                                         |
-| https://github.com/Jsmuk/zsyncnet               | .Net     | 💀          |                                                                                         |
-| https://github.com/disenone/zsync               | Python 2 | 💀          |                                                                                         |
-| https://github.com/kayahr/zsync                 | Node.js  | 🤷          |                                                                                         |
-| https://github.com/myml/msync                   | Go       | 💀          |                                                                                         |
+| Repository                                      | Language | Maintained | Notes                                                                                                   |
+| ----------------------------------------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| https://github.com/cph6/zsync                   | C        | 💀          | Available via most package managers, just `apt install zsync`                                           |
+| https://github.com/lalten/zsync <-- you're here | C        | ✅          | No compression support. Using `curl` http client, or one at all (just print ranges). Bazel integration. |
+| https://github.com/sisong/hsynz                 | C++      | ✅          | Supports zstd, stronger checksums, directories. Using forked `minihttp` http client lib                 |
+| https://github.com/AppImageCommunity/zsync2     | C++      | ✅          | C++ wrapper for zsync. Using `libcpr` http client lib                                                   |
+| https://github.com/probonopd/zsync-curl         | C        | 💀          | Mostly original zsync. Using `libcurl` http client lib                                                  |
+| https://github.com/AppImageCommunity/zsync3     | C++      | 💀          |                                                                                                         |
+| https://github.com/salesforce/zsync4j           | Java     | 💀          |                                                                                                         |
+| https://github.com/rokups/zinc/                 | C++      | 💀          |                                                                                                         |
+| https://github.com/AppImageCrafters/libzsync-go | Go       | 🤷          |                                                                                                         |
+| https://github.com/Redundancy/go-sync           | Go       | 💀          |                                                                                                         |
+| https://github.com/Jsmuk/zsyncnet               | .Net     | 💀          |                                                                                                         |
+| https://github.com/disenone/zsync               | Python 2 | 💀          |                                                                                                         |
+| https://github.com/kayahr/zsync                 | Node.js  | 🤷          |                                                                                                         |
+| https://github.com/myml/msync                   | Go       | 💀          |                                                                                                         |
 

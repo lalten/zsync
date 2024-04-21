@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euxo pipefail
+
 function separator() { echo -e "\n\n"; }
 
 # File doesn't even exist yet

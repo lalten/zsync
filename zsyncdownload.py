@@ -12,14 +12,14 @@ PATH="$PATH:$(bazel info bazel-bin)" ./zsyncdownload.py https://example.com/file
 """
 
 import hashlib
-import os
-from pathlib import Path
-import sys
-import subprocess
 import json
-from typing import NamedTuple
-import urllib.request
+import os
+import subprocess
+import sys
 import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import NamedTuple
 
 
 class ReuseableRange(NamedTuple):
@@ -50,9 +50,9 @@ def parse_zsyncfile(zsyncfile_path: str) -> dict[str, int | str]:
     return headers
 
 
-def update_file(file_path: str, file_url: str, ranges: ZsyncRanges, outfile: str) -> None:
-    # Note: HTTP Range end is inclusive!
-    bytes_to_download = sum(end - start for start, end in ranges.download)
+def update_file(
+    file_path: str, file_url: str, ranges: ZsyncRanges, outfile: str
+) -> None:
     downloaded_bytes = 0
     with open(outfile, "wb") as out:
         out.truncate(ranges.length)
@@ -73,11 +73,11 @@ def update_file(file_path: str, file_url: str, ranges: ZsyncRanges, outfile: str
                     while chunk := data.read(1024):
                         out.write(chunk)
                         downloaded_bytes += len(chunk)
-                        progress = round(100 * downloaded_bytes / bytes_to_download)
-                        print(f"\r{progress}%", end="")
             except urllib.error.HTTPError as e:
-                raise RuntimeError(f"HTTP Error {e.code} for {req.get_header('Range')} (length {ranges.length})") from e
-    print()
+                raise RuntimeError(
+                    f"HTTP Error {e.code} for {req.get_header('Range')} (length {ranges.length})"
+                ) from e
+
 
 def make_url(zsyncurl: str, header_url: str) -> str:
     parsed_url = urllib.parse.urlparse(header_url)
@@ -100,7 +100,7 @@ def parse_json(json_str: str) -> ZsyncRanges:
 def main(zsyncurl: str, seedfile: str, outfile: str) -> int:
     zsyncfile, _ = urllib.request.urlretrieve(zsyncurl)
 
-    cmd = ["zsyncranges", zsyncfile, seedfile]
+    cmd = ["zsyncranges", zsyncfile, seedfile]  # assume zsyncranges is on $PATH
     out = subprocess.check_output(cmd, text=True)
     ranges = parse_json(out)
 

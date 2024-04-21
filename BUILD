@@ -130,3 +130,11 @@ cc_test(
     data = ["curl_test.txt"],
     deps = [":curl"],
 )
+
+py_binary(
+    name = "zsyncdownload",
+    testonly = True,
+    srcs = ["zsyncdownload.py"],
+    data = [":zsyncranges"],
+    visibility = ["//tests:__subpackages__"],
+)

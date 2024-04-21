@@ -46,3 +46,15 @@ sh_test(
         "//:zsyncranges",
     ],
 )
+
+sh_test(
+    name = "zsync_clients_test",
+    timeout = "moderate",
+    srcs = ["zsync_clients_test.sh"],
+    data = [
+        "//:zsync",
+        "//:zsyncdownload",
+        "//:zsyncranges",
+    ],
+    tags = ["requires-network"],
+)

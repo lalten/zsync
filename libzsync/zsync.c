@@ -363,7 +363,7 @@ off_t *zsync_needed_byte_ranges(struct zsync_state *zs, int *num) {
     }
     free(blrange); /* And release the blocks, we're done with them */
 
-    if (byterange[2 * (nrange - 1) + 1] >= zs->filelen) {
+    if (nrange && byterange[2 * (nrange - 1) + 1] >= zs->filelen) {
         byterange[2 * (nrange - 1) + 1] = zs->filelen - 1;
     }
 

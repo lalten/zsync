@@ -1,1 +1,2 @@
 test --test_output=errors
+test -c dbg --copt -fsanitize=address --linkopt -fsanitize=address

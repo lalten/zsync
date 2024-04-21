@@ -27,6 +27,8 @@ void test_good() {
         fprintf(stderr, "unexpected output: %s", file_content);
         exit(EXIT_FAILURE);
     }
+
+    free(file_content);
 }
 
 void test_help() {
@@ -45,6 +47,8 @@ void test_help() {
         fprintf(stderr, "unexpected output: %s", curl_stdout);
         exit(EXIT_FAILURE);
     }
+
+    free(curl_stdout);
 }
 
 void test_notfound() {
@@ -65,6 +69,8 @@ void test_notfound() {
         fprintf(stderr, "curl_get failed with code %i\n", ret);
         exit(EXIT_FAILURE);
     }
+
+    free(file_content);
 }
 
 void test_envvar_good() {
@@ -82,6 +88,8 @@ void test_envvar_good() {
         fprintf(stderr, "unexpected output: %s", curl_stdout);
         exit(EXIT_FAILURE);
     }
+
+    free(curl_stdout);
 }
 
 void test_envvar_bad() {
@@ -95,6 +103,8 @@ void test_envvar_bad() {
         fprintf(stderr, "curl_get failed with code %i\n", ret);
         exit(EXIT_FAILURE);
     }
+
+    free(curl_stdout);
 }
 
 int main() {

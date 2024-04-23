@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     struct zsync_state *zs = zsync_begin(zsyncfile_stream, true);
     fclose(zsyncfile_stream);
     if (!zs) {
+        fprintf(stderr, "zsync_begin failed\n");
         exit(EXIT_FAILURE);
     }
 
@@ -39,18 +40,16 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    struct reuseable_range *rr;
-    size_t len_rr;
-    zsync_get_reuseable_ranges(zs, &rr, &len_rr);
-
-    int nrange = 0;
-    off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
-
     printf("{\"length\":%ld", zsync_get_filelength(zs));
+
     const char *checksum = NULL;
     const char *checksum_method = NULL;
     zsync_get_checksum(zs, &checksum, &checksum_method);
     printf(",\"checksum\":{\"%s\":\"%s\"}", checksum_method, checksum);
+
+    struct reuseable_range *rr;
+    size_t len_rr;
+    zsync_get_reuseable_ranges(zs, &rr, &len_rr);
     printf(",\"reuse\":[");
     for (size_t i = 0; i < len_rr; i++) {
         printf("[%ld,%ld,%zu]", rr[i].dst, rr[i].src, rr[i].len);
@@ -58,7 +57,10 @@ int main(int argc, char **argv) {
             printf(",");
         }
     }
+
     printf("],\"download\":[");
+    int nrange = 0;
+    off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
     for (int i = 0; i < nrange; i++) {
         printf("[%ld,%ld]", zbyterange[i * 2], zbyterange[i * 2 + 1]);
         if (i < nrange - 1) {

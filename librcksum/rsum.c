@@ -98,7 +98,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
         lastrange->len = z->filelen - lastrange->dst;
     }
 
-    if (!z->fd) {
+    if (z->fd == -1) {
         len = 0;
     }
     while (len) {

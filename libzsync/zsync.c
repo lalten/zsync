@@ -124,8 +124,7 @@ struct zsync_state *zsync_begin(FILE *f, bool no_output) {
     /* Any non-zero defaults here. */
     zs->mtime = -1;
 
-    // zs->no_output = no_output;
-    (void)no_output;
+    zs->no_output = no_output;
 
     for (;;) {
         char buf[1024];
@@ -217,6 +216,7 @@ struct zsync_state *zsync_begin(FILE *f, bool no_output) {
         return NULL;
     }
     if (zsync_read_blocksums(zs, f, rsum_bytes, checksum_bytes, seq_matches) != 0) {
+        fprintf(stderr, "zsync_read_blocksums failed\n");
         free(zs);
         return NULL;
     }
@@ -437,13 +437,13 @@ int zsync_complete(struct zsync_state *zs) {
             perror("lseek");
             rc = -1;
         }
-    }
 
-    /* Do checksum check */
-    if (rc == 0 && zs->checksum && !strcmp(zs->checksum_method, ckmeth_sha1)) {
-        rc = zsync_sha1(zs, fh);
+        /* Do checksum check */
+        if (rc == 0 && zs->checksum && !strcmp(zs->checksum_method, ckmeth_sha1)) {
+            rc = zsync_sha1(zs, fh);
+        }
+        close(fh);
     }
-    close(fh);
 
     return rc;
 }

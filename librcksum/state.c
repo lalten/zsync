@@ -54,6 +54,7 @@ struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_
 
     /* Temporary file to hold the target file as we get blocks for it */
     z->filename = no_output ? NULL : strdup("rcksum-XXXXXX");
+    z->fd = -1;
 
     /* Initialise to 0 various state & stats */
     z->gotblocks = 0;
@@ -70,29 +71,37 @@ struct rcksum_state *rcksum_init(zs_blockid nblocks, size_t blocksize, int rsum_
     z->rsum_hash = NULL;
     z->bithash = NULL;
 
-    if (!(z->blocksize & (z->blocksize - 1)) && z->filename != NULL && z->blocks) {
+    if (z->filename != NULL) {
         /* Create temporary file */
         z->fd = mkstemp(z->filename);
         if (z->fd == -1) {
             perror("open");
-        } else {
-            { /* Calculate bit-shift for blocksize */
-                int i;
-                for (i = 0; i < 32; i++)
-                    if (z->blocksize == (1u << i)) {
-                        z->blockshift = i;
-                        break;
-                    }
-            }
-
-            z->blockhashes = malloc(sizeof(z->blockhashes[0]) * (z->blocks + z->seq_matches));
-            if (z->blockhashes != NULL)
-                return z;
-
-            /* All below is error handling */
+            free(z->filename);
+            free(z);
+            return NULL;
         }
     }
-    free(z->filename);
+
+    if (!(z->blocksize & (z->blocksize - 1)) && z->blocks) {
+
+        { /* Calculate bit-shift for blocksize */
+            int i;
+            for (i = 0; i < 32; i++)
+                if (z->blocksize == (1u << i)) {
+                    z->blockshift = i;
+                    break;
+                }
+        }
+
+        z->blockhashes = malloc(sizeof(z->blockhashes[0]) * (z->blocks + z->seq_matches));
+        if (z->blockhashes != NULL)
+            return z;
+
+        /* All below is error handling */
+    }
+    if (z->filename) {
+        free(z->filename);
+    }
     free(z);
     return NULL;
 }

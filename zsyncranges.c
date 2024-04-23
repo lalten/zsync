@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -48,6 +47,10 @@ int main(int argc, char **argv) {
     off_t *zbyterange = zsync_needed_byte_ranges(zs, &nrange);
 
     printf("{\"length\":%ld", zsync_get_filelength(zs));
+    const char *checksum = NULL;
+    const char *checksum_method = NULL;
+    zsync_get_checksum(zs, &checksum, &checksum_method);
+    printf(",\"checksum\":{\"%s\":\"%s\"}", checksum_method, checksum);
     printf(",\"reuse\":[");
     for (size_t i = 0; i < len_rr; i++) {
         printf("[%ld,%ld,%zu]", rr[i].dst, rr[i].src, rr[i].len);

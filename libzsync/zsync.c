@@ -614,6 +614,11 @@ int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf, off_
 
 off_t zsync_get_filelength(const struct zsync_state *zs) { return zs->filelen; }
 
+void zsync_get_checksum(struct zsync_state *zs, const char **checksum, const char **checksum_method) {
+    *checksum = zs->checksum;
+    *checksum_method = zs->checksum_method;
+}
+
 /* Destructor */
 void zsync_end_receive(struct zsync_receiver *zr) {
     free(zr->outbuf);

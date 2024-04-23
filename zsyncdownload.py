@@ -35,6 +35,7 @@ class DownloadRange(NamedTuple):
 
 class ZsyncRanges(NamedTuple):
     length: int
+    checksum: dict[str, str]
     reuse: list[ReuseableRange]
     download: list[DownloadRange]
 
@@ -92,9 +93,11 @@ def sha1sum(file_path: str) -> str:
 
 def parse_json(json_str: str) -> ZsyncRanges:
     data = json.loads(json_str)
+    length = data["length"]
+    checksum = data["checksum"]
     reuse = [ReuseableRange(*r) for r in data["reuse"]]
     download = [DownloadRange(*r) for r in data["download"]]
-    return ZsyncRanges(data["length"], reuse, download)
+    return ZsyncRanges(length, checksum, reuse, download)
 
 
 def main(zsyncurl: str, seedfile: str, outfile: str) -> int:
@@ -109,8 +112,9 @@ def main(zsyncurl: str, seedfile: str, outfile: str) -> int:
     update_file(seedfile, fileurl, ranges, outfile)
 
     local_hash = sha1sum(outfile)
-    if local_hash != zsync_headers["SHA-1"]:
-        raise RuntimeError(f"SHA-1 mismatch: {local_hash} != {zsync_headers['SHA-1']}")
+    remote_hash = ranges.checksum["SHA-1"]
+    if local_hash != remote_hash:
+        raise RuntimeError(f"SHA-1 mismatch: {local_hash} != {remote_hash}")
     return os.EX_OK
 
 

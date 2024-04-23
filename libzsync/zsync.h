@@ -95,3 +95,5 @@ void zsync_end_receive(struct zsync_receiver *zr);
 int zsync_receive_data(struct zsync_receiver *zr, const unsigned char *buf, off_t offset, size_t len);
 
 off_t zsync_get_filelength(const struct zsync_state *zs);
+
+void zsync_get_checksum(struct zsync_state *zs, const char **checksum, const char **checksum_method);

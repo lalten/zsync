@@ -45,6 +45,7 @@ cc_test(
         "librcksum/md4.h",
         "librcksum/md4test.c",
     ],
+    copts = ["-Wno-overflow"],
     deps = [":zsglobal"],
 )
 
@@ -71,6 +72,7 @@ cc_test(
         "libzsync/sha1.h",
         "libzsync/sha1test.c",
     ],
+    copts = ["-Wno-overflow"],
     local_defines = local_defines,
     deps = [":zsglobal"],
 )

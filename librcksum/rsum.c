@@ -81,7 +81,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
     bool add_new_reusable_range = true;
     if (z->num_reusable_ranges) {
         lastrange = &z->reusable_ranges[z->num_reusable_ranges - 1];
-        if (lastrange->dst + lastrange->len == offset) {
+        if (lastrange->dst + (off_t)lastrange->len == offset) {
             add_new_reusable_range = false;
             lastrange->len += len;
         }
@@ -94,7 +94,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
         lastrange->len = len;
         lastrange->src = z->cur_position_in_file;
     }
-    if (lastrange->dst + lastrange->len > z->filelen) {
+    if (lastrange->dst + (off_t)lastrange->len > z->filelen) {
         lastrange->len = z->filelen - lastrange->dst;
     }
 

@@ -124,6 +124,9 @@ struct zsync_state *zsync_begin(FILE *f, bool no_output) {
     /* Any non-zero defaults here. */
     zs->mtime = -1;
 
+    // zs->no_output = no_output;
+    (void)no_output;
+
     for (;;) {
         char buf[1024];
         char *p = NULL;

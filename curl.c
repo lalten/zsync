@@ -13,7 +13,7 @@ char *make_curl_cmd(const char **restrict curl_options) {
         return NULL;
     }
     const char *curl_cmd = getenv("ZSYNC_CURL");
-    fprintf(cmd_stream, "%s", curl_cmd ?: "curl");
+    fprintf(cmd_stream, "%s", curl_cmd ? curl_cmd : "curl");
     for (const char **option = curl_options; *option; ++option) {
         fprintf(cmd_stream, " %s", *option);
     }

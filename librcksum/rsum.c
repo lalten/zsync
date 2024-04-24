@@ -75,13 +75,16 @@ void rcksum_calc_checksum(unsigned char *c, const unsigned char *data, size_t le
  * under-construction output file */
 static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_blockid bfrom, zs_blockid bto) {
     off_t len = ((off_t)(bto - bfrom + 1)) << z->blockshift;
-    off_t offset = ((off_t)bfrom) << z->blockshift;
+    off_t dst = ((off_t)bfrom) << z->blockshift;
+    off_t src = z->cur_position_in_file;
 
     struct reuseable_range *lastrange = NULL;
     bool add_new_reusable_range = true;
     if (z->num_reusable_ranges) {
         lastrange = &z->reusable_ranges[z->num_reusable_ranges - 1];
-        if (lastrange->dst + (off_t)lastrange->len == offset) {
+        bool dst_match = lastrange->dst + (off_t)lastrange->len == dst;
+        bool src_match = src == lastrange->src + (off_t)lastrange->len;
+        if (dst_match && src_match) {
             add_new_reusable_range = false;
             lastrange->len += len;
         }
@@ -90,9 +93,9 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
         z->num_reusable_ranges++;
         z->reusable_ranges = realloc(z->reusable_ranges, z->num_reusable_ranges * sizeof(struct reuseable_range));
         lastrange = &z->reusable_ranges[z->num_reusable_ranges - 1];
-        lastrange->dst = offset;
+        lastrange->dst = dst;
         lastrange->len = len;
-        lastrange->src = z->cur_position_in_file;
+        lastrange->src = src;
     }
     if (lastrange->dst + (off_t)lastrange->len > z->filelen) {
         lastrange->len = z->filelen - lastrange->dst;
@@ -111,7 +114,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
             l = 0x8000000;
 
         /* Write */
-        rc = pwrite(z->fd, data, l, offset);
+        rc = pwrite(z->fd, data, l, dst);
         if (rc == -1) {
             fprintf(stderr, "IO error: %s\n", strerror(errno));
             exit(-1);
@@ -121,7 +124,7 @@ static void write_blocks(struct rcksum_state *z, const unsigned char *data, zs_b
         len -= rc;
         if (len) { /* More to write */
             data += rc;
-            offset += rc;
+            dst += rc;
         }
     }
 

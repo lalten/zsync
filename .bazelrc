@@ -1,4 +1,5 @@
 test --test_output=errors
-test -c dbg --copt -fsanitize=address --linkopt -fsanitize=address
+test --config=debug
+build:debug -c dbg --copt -fsanitize=address --linkopt -fsanitize=address
 build --copt -Wall --copt -Wextra --copt -Wpedantic --copt -Werror
 common --lockfile_mode=off

@@ -27,17 +27,15 @@ separator
 #----------------------------------------------------------------
 echo Changed file, need partial update
 cp tests/files/loremipsum "$TEST_TMPDIR/seed"
-sed -i 's/massa/xxxxx/g' "$TEST_TMPDIR/seed"
-# changed locations are at "grep -ob massa tests/files/loremipsum | cut -d: -f1": 172, 451, 566, 803
+cat <(echo "extra data to be removed") <(sed 's/massa/xxxxx/g' tests/files/loremipsum) <(echo "This is extra data to be removed") >"$TEST_TMPDIR/seed"
 ranges="$(./zsyncranges "$(pwd)/tests/loremipsum.zsync" "$TEST_TMPDIR/seed")"
-# Ranges fall at change locations
-test "$ranges" == '{"length":1057,"checksum":{"SHA-1":"b1b8d0c324b78a99abfd2eec90260b1c2ba02eb8"},"reuse":[[0,0,168],[184,184,264],[456,456,104],[576,576,224],[808,808,249]],"download":[[168,183],[448,455],[560,575],[800,807]]}'
+test "$ranges" == '{"length":1057,"checksum":{"SHA-1":"b1b8d0c324b78a99abfd2eec90260b1c2ba02eb8"},"reuse":[[0,25,168],[184,209,264],[456,481,104],[576,601,224],[808,833,249]],"download":[[168,183],[448,455],[560,575],[800,807]]}'
 separator
 
 #----------------------------------------------------------------
 echo Read zsync from stdin
 ranges="$(./zsyncranges - "$TEST_TMPDIR/seed" <"$(pwd)/tests/loremipsum.zsync")"
-test "$ranges" == '{"length":1057,"checksum":{"SHA-1":"b1b8d0c324b78a99abfd2eec90260b1c2ba02eb8"},"reuse":[[0,0,168],[184,184,264],[456,456,104],[576,576,224],[808,808,249]],"download":[[168,183],[448,455],[560,575],[800,807]]}'
+test "$ranges" == '{"length":1057,"checksum":{"SHA-1":"b1b8d0c324b78a99abfd2eec90260b1c2ba02eb8"},"reuse":[[0,25,168],[184,209,264],[456,481,104],[576,601,224],[808,833,249]],"download":[[168,183],[448,455],[560,575],[800,807]]}'
 separator
 
 #----------------------------------------------------------------

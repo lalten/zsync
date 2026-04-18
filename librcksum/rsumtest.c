@@ -15,7 +15,7 @@ static void test_eq(int a, int b) {
 }
 
 void make_0000ff00_data(unsigned char* data, size_t len) {
-    int i;
+    size_t i;
     for (i = 0; i < len; i++) {
         if (i % 4 == 2) {
             data[i] = 0xff;
@@ -35,7 +35,7 @@ void test_00000000(void) {
 
 void test_abcde(void) {
     unsigned char data[4096];
-    int i;
+    size_t i;
 
     for (i = 0; i < sizeof(data); i++) {
         data[i] = "abcde"[i % 5];

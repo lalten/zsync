@@ -380,7 +380,7 @@ int main(int argc, char **argv) {
                 filename = strdup(optarg);
                 break;
             case 'i':
-                seedfiles = (char **)append_ptrlist(&nseedfiles, (void **)seedfiles, optarg);
+                seedfiles = append_ptrlist(&nseedfiles, seedfiles, optarg);
                 break;
             case 'q':
                 no_progress = 1;
@@ -423,7 +423,7 @@ int main(int argc, char **argv) {
         /* If the target file already exists, we're probably updating that file
          * - so it's a seed file */
         if (!access(filename, R_OK)) {
-            seedfiles = (char **)append_ptrlist(&nseedfiles, (void **)seedfiles, filename);
+            seedfiles = append_ptrlist(&nseedfiles, seedfiles, filename);
         }
         /* If the .part file exists, it's probably an interrupted earlier
          * effort; a normal HTTP client would 'resume' from where it got to,
@@ -431,7 +431,7 @@ int main(int argc, char **argv) {
          * current version on the remote) and doesn't need to, because we can
          * treat it like any other local source of data. Use it now. */
         if (!access(temp_file, R_OK)) {
-            seedfiles = (char **)append_ptrlist(&nseedfiles, (void **)seedfiles, temp_file);
+            seedfiles = append_ptrlist(&nseedfiles, seedfiles, temp_file);
         }
 
         /* Try any seed files supplied by the command line */

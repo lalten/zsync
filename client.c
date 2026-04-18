@@ -82,14 +82,17 @@ char *referer;
 
 /* A ptrlist is a very simple structure for storing lists of pointers. This is
  * the only function in its API. The structure (not actually a struct) consists
- * of a (pointer to a) void*[] and an int giving the number of entries.
+ * of a (pointer to a) char*[] and an int giving the number of entries.
  *
  * ptrlist = append_ptrlist(&entries, ptrlist, new_entry)
  * Like realloc(2), this returns the new location of the ptrlist array; the
  * number of entries is passed by reference and updated in place. The new entry
  * is appended to the list.
+ *
+ * Specialised to char*[] since that is all that we need here and that avoids
+ * compiler complaints.
  */
-static void **append_ptrlist(int *n, void **p, void *a) {
+static char **append_ptrlist(int *n, char **p, void *a) {
     if (!a)
         return p;
     p = realloc(p, (*n + 1) * sizeof *p);
@@ -377,7 +380,7 @@ int main(int argc, char **argv) {
                 filename = strdup(optarg);
                 break;
             case 'i':
-                seedfiles = (char **)append_ptrlist(&nseedfiles, (void **)seedfiles, optarg);
+                seedfiles = append_ptrlist(&nseedfiles, seedfiles, optarg);
                 break;
             case 'q':
                 no_progress = 1;
@@ -420,7 +423,7 @@ int main(int argc, char **argv) {
         /* If the target file already exists, we're probably updating that file
          * - so it's a seed file */
         if (!access(filename, R_OK)) {
-            seedfiles = (char **)append_ptrlist(&nseedfiles, (void **)seedfiles, filename);
+            seedfiles = append_ptrlist(&nseedfiles, seedfiles, filename);
         }
         /* If the .part file exists, it's probably an interrupted earlier
          * effort; a normal HTTP client would 'resume' from where it got to,
@@ -428,7 +431,7 @@ int main(int argc, char **argv) {
          * current version on the remote) and doesn't need to, because we can
          * treat it like any other local source of data. Use it now. */
         if (!access(temp_file, R_OK)) {
-            seedfiles = (char **)append_ptrlist(&nseedfiles, (void **)seedfiles, temp_file);
+            seedfiles = append_ptrlist(&nseedfiles, seedfiles, temp_file);
         }
 
         /* Try any seed files supplied by the command line */

@@ -39,6 +39,18 @@ cc_library(
 )
 
 cc_test(
+    name = "rsumtest",
+    srcs = [
+        "librcksum/internal.h",
+        "librcksum/md4.h",
+        "librcksum/rcksum.h",
+        "librcksum/rsumtest.c",
+    ],
+    local_defines = local_defines,
+    deps = [":librcksum"],
+)
+
+cc_test(
     name = "md4test",
     srcs = [
         "librcksum/md4.c",

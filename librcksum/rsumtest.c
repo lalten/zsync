@@ -3,9 +3,9 @@
 #include <string.h>
 #include <sys/time.h>
 
-#include "rcksum.h"
-#include "md4.h"
 #include "internal.h"
+#include "md4.h"
+#include "rcksum.h"
 
 static void test_eq(int a, int b) {
     if (a != b) {
@@ -14,12 +14,13 @@ static void test_eq(int a, int b) {
     }
 }
 
-void make_0000ff00_data(unsigned char* data, size_t len) {
+void make_0000ff00_data(unsigned char *data, size_t len) {
     size_t i;
     for (i = 0; i < len; i++) {
         if (i % 4 == 2) {
             data[i] = 0xff;
-        } else data[i] = 0x00;
+        } else
+            data[i] = 0x00;
     }
 }
 

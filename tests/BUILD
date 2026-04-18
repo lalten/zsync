@@ -1,5 +1,6 @@
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@zsync3//:zsyncfile.bzl", "zsyncfile")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 zsyncfile(
     name = "empty.zsync",
